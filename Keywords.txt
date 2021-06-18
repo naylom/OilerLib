@@ -1,0 +1,34 @@
+# Syntax Coloring Map For OilerLib
+
+# Datatypes (KEYWORD1)
+TheOiler	KEYWORD1
+TheMachine	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+AddMotor	KEYWORD2
+On	KEYWORD2
+Off	KEYWORD2
+SetMotorsForward	KEYWORD2
+SetMotorsBackward	KEYWORD2
+SetStartMode	KEYWORD2
+SetAlert	KEYWORD2
+GetStartMode	KEYWORD2
+GetStatus KEYWORD2
+AddMachine	KEYWORD2
+GetMotorWorkCount	KEYWORD2
+GetMotorState	KEYWORD2
+GetTimeOilerIdle	KEYWORD2
+GetTimeSinceMotorStarted	KEYWORD2
+AllMotorsStopped	KEYWORD2
+
+
+# Instances (KEYWORD2)
+
+# Constants (LITERAL1)
+ON_TIME	LITERAL1
+ON_POWERED_TIME	LITERAL1
+ON_TARGET_ACTIVITY	LITERAL1
+NONE	LITERAL1
+OILING	LITERAL1
+OFF	LITERAL1
+IDLE	LITERAL1
