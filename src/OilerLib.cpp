@@ -111,13 +111,14 @@ void OilerTmerCallback ( void )
 
 OilerClass::OilerClass ( TargetMachineClass* pMachine )
 {
-	m_pMachine = pMachine;
-	m_OilerMode = ON_TIME;
-	m_OilerStatus = OFF;
-	m_ulOilTime = TIME_BETWEEN_OILING;
-	m_Motors.uiNumMotors = 0;
-	m_uiAlertPin = NOT_A_PIN;
-	m_ulAlertMultiple = 0UL;
+	m_pMachine				= pMachine;
+	m_OilerMode				= ON_TIME;
+	m_OilerStatus			= OFF;
+	m_ulOilTime				= TIME_BETWEEN_OILING;
+	m_Motors.uiNumMotors	= 0;
+	m_uiAlertPin			= NOT_A_PIN;
+	m_ulAlertMultiple		= 0UL;
+	m_uiALertOnValue		= ALERT_PIN_ERROR_STATE;
 }
 
 bool OilerClass::On ()
@@ -207,6 +208,22 @@ bool	OilerClass::SetAlert ( uint8_t uiAlertPin, uint32_t ulAlertMultiple )
 		bResult = true;
 	}
 
+	return bResult;
+}
+
+bool OilerClass::SetAlertLevel ( uint8_t uiLevel )
+{
+	bool bResult = false;
+	if ( uiLevel == HIGH || uiLevel == LOW )
+	{
+		// if changed
+		if ( m_uiALertOnValue != uiLevel )
+		{
+			digitalWrite ( m_uiAlertPin, uiLevel );
+			m_uiALertOnValue = uiLevel;
+		}
+		bResult = true;
+	}
 	return bResult;
 }
 
@@ -390,7 +407,7 @@ void	OilerClass::CheckError ( uint32_t ulActual, uint32_t ulTarget )
 			// Serial.print ( "Actual " ); Serial.print ( ulActual ); Serial.print ( " Target " ); Serial.println ( ulTarget );
 			if ( m_uiAlertPin != NOT_A_PIN )
 			{
-				digitalWrite ( m_uiAlertPin, ALERT_PIN_ERROR_STATE );
+				digitalWrite ( m_uiAlertPin, m_uiALertOnValue );
 			}
 		}
 	}
@@ -400,7 +417,7 @@ void	OilerClass::ClearError ( void )
 {
 	if ( m_uiAlertPin != NOT_A_PIN )
 	{
-		digitalWrite ( m_uiAlertPin, ALERT_PIN_ERROR_STATE == HIGH ? LOW : HIGH );
+		digitalWrite ( m_uiAlertPin, m_uiALertOnValue == HIGH ? LOW : HIGH );
 	}
 }
 

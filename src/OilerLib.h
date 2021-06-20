@@ -35,12 +35,12 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				1.3
+#define		OILER_VERSION				1.4
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
 #define		MOTOR_WORK_SIGNAL_PINMODE	INPUT_PULLUP
-#define		ALERT_PIN_ERROR_STATE		HIGH										// LOW or HIGH as required
+#define		ALERT_PIN_ERROR_STATE		HIGH										// dewfault value
 #define		TIME_BETWEEN_OILING			30											// default value  - In seconds
 #define		NUM_MOTOR_WORK_EVENTS		3											// number of motor outputs (oil drips) after which motor is stopped and restarts waiting for mode threshold to occur
 #define		DEBOUNCE_THRESHOLD			150UL										// milliseconds, increase if drip sensor is registering too many drips per single drip
@@ -63,14 +63,15 @@ public:
 	bool				AddMotor ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// FourPin Stepper version
 	bool				AddMotor ( uint8_t uiPin, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// 1 pin relay version
 	bool				SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertMultiple );	// Set the pin to be signalled when oiling is delayed.
+	bool				SetAlertLevel ( uint8_t uiLevel );							// Set level of alert pin when in Alert State
 	void				SetMotorsBackward ( void );									// Set direction of all motors
 	void				SetMotorsBackward ( uint8_t uiMotorIndex );					// set direction of specified motor
 	void				SetMotorsForward ( void );									// Set direction of all motors
 	void				SetMotorsForward ( uint8_t uiMotorIndex );					// Set direction of specified motor
+	bool				SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode );	// set mode to INPUT or INPUT_PULLUP for input sensor of specified motor
 	bool				SetStartEventToTargetActiveTime ( uint32_t ulTargetSecs );	// set time target machine (eg lathe) has power to be event that causes motors to restart oiling
 	bool				SetStartEventToTargetWork ( uint32_t ulTargetUnits );		// set amount of work done by target machine ( eg lathe) to be event that causes motors to restart oiling
 	bool				SetStartEventToTime ( uint32_t ulElapsedSecs );				// set elapsed time to be event that causes motors to restart oiling
-	bool				SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode );	// set mode to INPUT or INPUT_PULLUP for input sensor of specified motor
 	// Queries
 	bool				AllMotorsStopped ( void );									// true if no motors active
 	bool				IsIdle ();													// true if all motors are paused waiting for event to start again
@@ -109,6 +110,8 @@ protected:
 	uint32_t			m_timeOilerStopped;
 	uint8_t				m_uiAlertPin;												// pin to signal if Alert to be generated
 	uint16_t			m_ulAlertMultiple;											// Multiple of metric used to restart Oiler if motors are running in excess of AlertMultiple * metric
+	uint8_t				m_uiALertOnValue;											// value to set pin when alert in on
+
 	union																			// These values are mutually exclsuive so use same storage
 	{
 		uint32_t m_ulOilTime;
