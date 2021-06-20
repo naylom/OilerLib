@@ -23,10 +23,10 @@
 #endif
 
 
-#define		MACHINE_ACTIVE_PIN_MODE		INPUT_PULLUP		// Change to INPUT if internal Arduino pullups not needed
+#define		MACHINE_ACTIVE_PIN_MODE		INPUT_PULLUP		// Default value
 #define		MACHINE_ACTIVE_PIN_SIGNAL	CHANGE				// Callback invoked if signal CHANGES
 #define		MACHINE_ACTIVE_STATE		HIGH				// signal HIGH when machine is active, change to LOW if that is how target machine works
-#define		MACHINE_WORK_PIN_MODE		INPUT_PULLUP		// Change to INPUT if internal Arduino pullups not needed
+#define		MACHINE_WORK_PIN_MODE		INPUT_PULLUP		// Default value
 #define		MACHINE_WORK_PIN_SIGNAL		FALLING				// signal FALLS when unit completed, change to RISING if that is how target machine works
 
 
@@ -51,6 +51,8 @@ public:
 	void			IncWorkUnit ( uint32_t ulIncAmoount );
 	bool			SetActiveTimeTarget ( uint32_t ulTargetSecs );
 	bool			SetWorkTarget ( uint32_t ulTargetUnits );
+	bool			SetActivePinMode ( uint8_t uiMode );		// set Active input pin to INPUT or INPUT_PULLUP
+	bool			SetWorkPinMode ( uint8_t uiMode );			// set Work input pin to INPUT or INPUT_PULLUP
 	void			CheckActivity ( void );						// check activity after change in signal from machine
 protected:
 	eMachineState	m_State;
@@ -62,6 +64,8 @@ protected:
 	uint32_t		m_ulTargetUnits;
 	uint8_t			m_uiActivitePin;							// Pin used to signal when machine is active
 	uint8_t			m_uiWorkPin;								// Pin used to signal when machine has completed work
+	uint8_t			m_uiActivePinMode;
+	uint8_t			m_uiWorkPinMode;
 };
 
 extern TargetMachineClass TheMachine;
