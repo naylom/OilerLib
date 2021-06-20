@@ -508,6 +508,16 @@ bool OilerClass::SetStartEventToTime ( uint32_t ulElapsedSecs )
 	return SetStartMode ( ON_TIME, ulElapsedSecs );
 }
 
+bool OilerClass::SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode )
+{
+	bool bResult = false;
+	if ( ( uiMode == INPUT || uiMode == INPUT_PULLUP ) && uiMotorIndex < m_Motors.uiNumMotors )
+	{
+		pinMode ( m_Motors.MotorInfo [ 1 ].uiWorkPin, uiMode );
+	}
+	return bResult;
+}
+
 // Set all motors in specified direction
 void OilerClass::SetMotorsForward ( void )
 {
