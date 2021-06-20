@@ -35,7 +35,7 @@ void MachineWorkUnitSignal ( void )
 TargetMachineClass::TargetMachineClass ( void )
 {
 	m_uiWorkPin			= NOT_A_PIN;
-	m_uiActivitePin		= NOT_A_PIN;
+	m_uiActivePin		= NOT_A_PIN;
 	m_State				= NOT_READY;
 	m_Active			= IDLE;
 	m_uiActivePinMode	= MACHINE_ACTIVE_PIN_MODE;		// set default value
@@ -46,10 +46,10 @@ bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin, u
 {
 	bool bResult = true;
 
-	m_ulTargetSecs = uiActiveUnitTarget;
+	m_ulTargetSecs	= uiActiveUnitTarget;
 	m_ulTargetUnits = uiWorkUnitTarget;
-	m_uiActivitePin = uiActivePin;
-	m_uiWorkPin = uiWorkPin;
+	m_uiActivePin	= uiActivePin;
+	m_uiWorkPin		= uiWorkPin;
 
 	if ( uiActivePin == NOT_A_PIN && uiWorkPin == NOT_A_PIN )
 	{
@@ -81,7 +81,7 @@ void TargetMachineClass::RestartMonitoring ( void )
 	if ( m_State != NO_FEATURES )
 	{
 		m_State = NOT_READY;
-		m_Active = m_uiActivitePin == NOT_A_PIN ? IDLE : digitalRead ( m_uiActivitePin ) == MACHINE_ACTIVE_STATE ? ACTIVE : IDLE;
+		m_Active = m_uiActivePin == NOT_A_PIN ? IDLE : digitalRead ( m_uiActivePin ) == MACHINE_ACTIVE_STATE ? ACTIVE : IDLE;
 		if ( m_Active == ACTIVE )
 		{
 			m_timeActiveStarted = millis ();
@@ -92,7 +92,7 @@ void TargetMachineClass::RestartMonitoring ( void )
 void TargetMachineClass::CheckActivity ( void )
 {
 	// see how machine has changed state
-	if ( digitalRead ( m_uiActivitePin ) == MACHINE_ACTIVE_STATE )
+	if ( digitalRead ( m_uiActivePin ) == MACHINE_ACTIVE_STATE )
 	{
 		// machine gone active so remember when this started
 		TheMachine.GoneActive ( millis () );
@@ -163,7 +163,7 @@ void TargetMachineClass::IncActiveTime ( uint32_t tNow )
 	{
 		m_State = READY;
 	}
-	m_Active = digitalRead ( m_uiActivitePin ) == MACHINE_ACTIVE_STATE ? ACTIVE : IDLE;
+	m_Active = digitalRead ( m_uiActivePin ) == MACHINE_ACTIVE_STATE ? ACTIVE : IDLE;
 }
 
 void TargetMachineClass::GoneActive ( uint32_t tNow )
@@ -184,7 +184,7 @@ void TargetMachineClass::IncWorkUnit ( uint32_t ulIncAmoount )
 bool TargetMachineClass::SetActiveTimeTarget ( uint32_t ulTargetSecs )
 {
 	bool bResult = false;
-	if ( m_uiActivitePin != NOT_A_PIN )
+	if ( m_uiActivePin != NOT_A_PIN )
 	{
 		m_ulTargetSecs = ulTargetSecs;
 		bResult = true;

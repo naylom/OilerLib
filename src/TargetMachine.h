@@ -62,7 +62,7 @@ protected:
 	uint32_t		m_ulWorkUnitCount;
 	uint32_t		m_ulTargetSecs;
 	uint32_t		m_ulTargetUnits;
-	uint8_t			m_uiActivitePin;							// Pin used to signal when machine is active
+	uint8_t			m_uiActivePin;								// Pin used to signal when machine is active
 	uint8_t			m_uiWorkPin;								// Pin used to signal when machine has completed work
 	uint8_t			m_uiActivePinMode;
 	uint8_t			m_uiWorkPinMode;
