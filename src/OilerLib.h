@@ -35,7 +35,7 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				1.2
+#define		OILER_VERSION				1.3
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
@@ -70,6 +70,7 @@ public:
 	bool				SetStartEventToTargetActiveTime ( uint32_t ulTargetSecs );	// set time target machine (eg lathe) has power to be event that causes motors to restart oiling
 	bool				SetStartEventToTargetWork ( uint32_t ulTargetUnits );		// set amount of work done by target machine ( eg lathe) to be event that causes motors to restart oiling
 	bool				SetStartEventToTime ( uint32_t ulElapsedSecs );				// set elapsed time to be event that causes motors to restart oiling
+	bool				SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode );	// set mode to INPUT or INPUT_PULLUP for input sensor of specified motor
 	// Queries
 	bool				AllMotorsStopped ( void );									// true if no motors active
 	bool				IsIdle ();													// true if all motors are paused waiting for event to start again
@@ -131,4 +132,3 @@ protected:
 extern OilerClass TheOiler;
 
 #endif
-
