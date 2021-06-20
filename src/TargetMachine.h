@@ -53,6 +53,7 @@ public:
 	bool			SetWorkTarget ( uint32_t ulTargetUnits );
 	bool			SetActivePinMode ( uint8_t uiMode );		// set Active input pin to INPUT or INPUT_PULLUP
 	bool			SetWorkPinMode ( uint8_t uiMode );			// set Work input pin to INPUT or INPUT_PULLUP
+	bool			SetActiveState ( uint8_t uiState );			// set if HIGH or LOW indicates machine has power
 	void			CheckActivity ( void );						// check activity after change in signal from machine
 protected:
 	eMachineState	m_State;
@@ -66,6 +67,7 @@ protected:
 	uint8_t			m_uiWorkPin;								// Pin used to signal when machine has completed work
 	uint8_t			m_uiActivePinMode;
 	uint8_t			m_uiWorkPinMode;
+	uint8_t			m_uiActiveState;							// state that inidcates machine has power - must be HIGH or LOW
 };
 
 extern TargetMachineClass TheMachine;
