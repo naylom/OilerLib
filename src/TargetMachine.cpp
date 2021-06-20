@@ -40,7 +40,7 @@ TargetMachineClass::TargetMachineClass ( void )
 	m_Active			= IDLE;
 	m_uiActivePinMode	= MACHINE_ACTIVE_PIN_MODE;		// set default value
 	m_uiWorkPinMode		= MACHINE_WORK_PIN_MODE;		// set default value
-	m_uiActiveState		= MACHINE_ACTIVE_STATE			// set default value
+	m_uiActiveState		= MACHINE_ACTIVE_STATE;			// set default value
 }
 
 bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin, uint8_t uiActiveUnitTarget, uint8_t uiWorkUnitTarget )
@@ -93,7 +93,7 @@ void TargetMachineClass::RestartMonitoring ( void )
 void TargetMachineClass::CheckActivity ( void )
 {
 	// see how machine has changed state
-	if ( digitalRead ( m_uiActivitePin ) == m_uiActiveState )
+	if ( digitalRead ( m_uiActivePin ) == m_uiActiveState )
 	{
 		// machine gone active so remember when this started
 		TheMachine.GoneActive ( millis () );
