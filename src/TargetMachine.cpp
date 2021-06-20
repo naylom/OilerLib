@@ -40,16 +40,17 @@ TargetMachineClass::TargetMachineClass ( void )
 	m_Active			= IDLE;
 	m_uiActivePinMode	= MACHINE_ACTIVE_PIN_MODE;		// set default value
 	m_uiWorkPinMode		= MACHINE_WORK_PIN_MODE;		// set default value
+	m_uiActiveState		= MACHINE_ACTIVE_STATE			// set default value
 }
 
 bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin, uint8_t uiActiveUnitTarget, uint8_t uiWorkUnitTarget )
 {
 	bool bResult = true;
 
-	m_ulTargetSecs = uiActiveUnitTarget;
+	m_ulTargetSecs	= uiActiveUnitTarget;
 	m_ulTargetUnits = uiWorkUnitTarget;
 	m_uiActivitePin = uiActivePin;
-	m_uiWorkPin = uiWorkPin;
+	m_uiWorkPin		= uiWorkPin;
 
 	if ( uiActivePin == NOT_A_PIN && uiWorkPin == NOT_A_PIN )
 	{
@@ -59,14 +60,14 @@ bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin, u
 
 	if ( uiActivePin != NOT_A_PIN )
 	{
-		if ( PCIHandler.AddPin ( uiActivePin, MachineActiveSignal, MACHINE_ACTIVE_PIN_SIGNAL, MACHINE_ACTIVE_PIN_MODE ) == false )
+		if ( PCIHandler.AddPin ( uiActivePin, MachineActiveSignal, MACHINE_ACTIVE_PIN_SIGNAL, m_uiActivePinMode ) == false )
 		{
 			bResult = false;
 		}
 	}
 	if ( uiWorkPin != NOT_A_PIN )
 	{
-		if ( PCIHandler.AddPin ( uiWorkPin, MachineWorkUnitSignal, MACHINE_WORK_PIN_SIGNAL, MACHINE_WORK_PIN_MODE ) == false )
+		if ( PCIHandler.AddPin ( uiWorkPin, MachineWorkUnitSignal, MACHINE_WORK_PIN_SIGNAL, m_uiWorkPinMode ) == false )
 		{
 			bResult = false;
 		}
@@ -92,7 +93,7 @@ void TargetMachineClass::RestartMonitoring ( void )
 void TargetMachineClass::CheckActivity ( void )
 {
 	// see how machine has changed state
-	if ( digitalRead ( m_uiActivitePin ) == MACHINE_ACTIVE_STATE )
+	if ( digitalRead ( m_uiActivitePin ) == m_uiActiveState )
 	{
 		// machine gone active so remember when this started
 		TheMachine.GoneActive ( millis () );
@@ -203,7 +204,7 @@ bool TargetMachineClass::SetWorkTarget ( uint32_t ulTargetUnits )
 	return bResult;
 }
 
-bool			SetActivePinMode ( uint8_t uiMode )
+bool TargetMachineClass::SetActivePinMode ( uint8_t uiMode )
 {
 	bool bResult = false;
 	if ( uiMode == INPUT || uiMode == INPUT_PULLUP )
@@ -219,7 +220,7 @@ bool			SetActivePinMode ( uint8_t uiMode )
 	return bResult;
 }
 
-bool			SetWorkPinMode ( uint8_t uiMode )
+bool TargetMachineClass::SetWorkPinMode ( uint8_t uiMode )
 {
 	bool bResult = false;
 	if ( uiMode == INPUT || uiMode == INPUT_PULLUP )
@@ -233,7 +234,17 @@ bool			SetWorkPinMode ( uint8_t uiMode )
 		bResult = true;
 	}
 	return bResult;
+}
 
+bool TargetMachineClass::SetActiveState ( uint8_t uiState )
+{
+	bool bResult = false;
+	if ( uiState == HIGH || uiState == LOW )
+	{
+		m_uiWorkPinMode = uiState;
+		bResult = true;
+	}
+	return bResult;
 }
 
 TargetMachineClass TheMachine;				// Create instance
