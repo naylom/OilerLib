@@ -203,7 +203,7 @@ bool TargetMachineClass::SetWorkTarget ( uint32_t ulTargetUnits )
 	return bResult;
 }
 
-bool			SetActivePinMode ( uint8_t uiMode )
+bool TargetMachineClass::SetActivePinMode ( uint8_t uiMode )
 {
 	bool bResult = false;
 	if ( uiMode == INPUT || uiMode == INPUT_PULLUP )
@@ -219,7 +219,7 @@ bool			SetActivePinMode ( uint8_t uiMode )
 	return bResult;
 }
 
-bool			SetWorkPinMode ( uint8_t uiMode )
+bool TargetMachineClass::SetWorkPinMode ( uint8_t uiMode )
 {
 	bool bResult = false;
 	if ( uiMode == INPUT || uiMode == INPUT_PULLUP )
