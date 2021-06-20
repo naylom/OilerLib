@@ -82,7 +82,7 @@ void TargetMachineClass::RestartMonitoring ( void )
 	if ( m_State != NO_FEATURES )
 	{
 		m_State = NOT_READY;
-		m_Active = m_uiActivePin == NOT_A_PIN ? IDLE : digitalRead ( m_uiActivePin ) == MACHINE_ACTIVE_STATE ? ACTIVE : IDLE;
+		m_Active = m_uiActivePin == NOT_A_PIN ? IDLE : digitalRead ( m_uiActivePin ) == m_uiActiveState ? ACTIVE : IDLE;
 		if ( m_Active == ACTIVE )
 		{
 			m_timeActiveStarted = millis ();
@@ -164,7 +164,7 @@ void TargetMachineClass::IncActiveTime ( uint32_t tNow )
 	{
 		m_State = READY;
 	}
-	m_Active = digitalRead ( m_uiActivePin ) == MACHINE_ACTIVE_STATE ? ACTIVE : IDLE;
+	m_Active = digitalRead ( m_uiActivePin ) == m_uiActiveState ? ACTIVE : IDLE;
 }
 
 void TargetMachineClass::GoneActive ( uint32_t tNow )
