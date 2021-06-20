@@ -35,7 +35,7 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				1.4
+#define		OILER_VERSION				1.2
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
@@ -59,7 +59,7 @@ public:
 	bool				On ();														// Start all motors
 	void				Off ();														// Stop all motors
 
-	void				AddMachine ( TargetMachineClass* pMachine );				// optionally called to inform oiler we have a target machine that can be queried// one pin relay version
+	void				AddMachine ( TargetMachineClass* pMachine );				// optionally called to inform oiler we have a target machine that can be queried
 	bool				AddMotor ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// FourPin Stepper version
 	bool				AddMotor ( uint8_t uiPin, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// 1 pin relay version
 	bool				SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertMultiple );	// Set the pin to be signalled when oiling is delayed.

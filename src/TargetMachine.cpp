@@ -34,10 +34,12 @@ void MachineWorkUnitSignal ( void )
 // Class routines
 TargetMachineClass::TargetMachineClass ( void )
 {
-	m_uiWorkPin = NOT_A_PIN;
-	m_uiActivitePin = NOT_A_PIN;
-	m_State = NOT_READY;
-	m_Active = IDLE;
+	m_uiWorkPin			= NOT_A_PIN;
+	m_uiActivitePin		= NOT_A_PIN;
+	m_State				= NOT_READY;
+	m_Active			= IDLE;
+	m_uiActivePinMode	= MACHINE_ACTIVE_PIN_MODE;		// set default value
+	m_uiWorkPinMode		= MACHINE_WORK_PIN_MODE;		// set default value
 }
 
 bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin, uint8_t uiActiveUnitTarget, uint8_t uiWorkUnitTarget )
@@ -199,6 +201,39 @@ bool TargetMachineClass::SetWorkTarget ( uint32_t ulTargetUnits )
 		bResult = true;
 	}
 	return bResult;
+}
+
+bool			SetActivePinMode ( uint8_t uiMode )
+{
+	bool bResult = false;
+	if ( uiMode == INPUT || uiMode == INPUT_PULLUP )
+	{
+		if ( uiMode != m_uiActivePinMode )
+		{
+			// has changed
+			pinMode ( m_uiActivePin, uiMode );
+			m_uiActivePinMode = uiMode;
+		}
+		bResult = true;
+	}
+	return bResult;
+}
+
+bool			SetWorkPinMode ( uint8_t uiMode )
+{
+	bool bResult = false;
+	if ( uiMode == INPUT || uiMode == INPUT_PULLUP )
+	{
+		if ( uiMode != m_uiWorkPinMode )
+		{
+			// has changed
+			pinMode ( m_uiWorkPin, uiMode );
+			m_uiWorkPinMode = uiMode;
+		}
+		bResult = true;
+	}
+	return bResult;
+
 }
 
 TargetMachineClass TheMachine;				// Create instance
