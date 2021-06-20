@@ -31,6 +31,53 @@ void Motor2WorkSignal ( void )
 	}
 }
 
+void Motor3WorkSignal ( void )
+{
+	static uint32_t ulLastSignal = 0;
+	uint32_t tNow = millis ();
+
+	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	{
+		ulLastSignal = tNow;
+		TheOiler.MotorWork ( 2 );
+	}
+}
+
+void Motor4WorkSignal ( void )
+{
+	static uint32_t ulLastSignal = 0;
+	uint32_t tNow = millis ();
+
+	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	{
+		ulLastSignal = tNow;
+		TheOiler.MotorWork ( 3 );
+	}
+}
+
+void Motor5WorkSignal ( void )
+{
+	static uint32_t ulLastSignal = 0;
+	uint32_t tNow = millis ();
+
+	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	{
+		ulLastSignal = tNow;
+		TheOiler.MotorWork ( 4 );
+	}
+}
+
+void Motor6WorkSignal ( void )
+{
+	static uint32_t ulLastSignal = 0;
+	uint32_t tNow = millis ();
+
+	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	{
+		ulLastSignal = tNow;
+		TheOiler.MotorWork ( 5 );
+	}
+}
 // list of ISRs for each possible motor
 typedef void ( *Callback )( void );
 struct
@@ -39,7 +86,11 @@ struct
 } MotorISRs =
 {
 	Motor1WorkSignal,
-	Motor2WorkSignal
+	Motor2WorkSignal,
+	Motor3WorkSignal,
+	Motor4WorkSignal,
+	Motor5WorkSignal,
+	Motor6WorkSignal
 };
 
 void OilerTmerCallback ( void )

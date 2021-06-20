@@ -35,7 +35,7 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				1.1
+#define		OILER_VERSION				1.2
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
