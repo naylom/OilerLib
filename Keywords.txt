@@ -15,6 +15,7 @@ SetMotorsBackward	KEYWORD2
 SetStartMode	KEYWORD2
 SetAlert	KEYWORD2
 SetMotorWorkPinMode	KEYWORD2
+SetMotorSensorDebounce KEYWORD2
 SetStartEventToTargetActiveTime	KEYWORD2
 SetStartEventToTargetWork KEYWORD2
 SetStartEventToTime	KEYWORD2

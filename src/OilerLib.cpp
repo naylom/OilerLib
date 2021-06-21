@@ -10,72 +10,66 @@
 void Motor1WorkSignal ( void )
 {
 	static uint32_t ulLastSignal = 0;
-	uint32_t tNow = millis ();
 
-	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	if ( TheOiler.MotorWork ( ulLastSignal, 0 ) == true )
 	{
-		ulLastSignal = tNow;
-		TheOiler.MotorWork ( 0 );
+		// signal was accepted
+		ulLastSignal = millis ();
 	}
 }
 
 void Motor2WorkSignal ( void )
 {
 	static uint32_t ulLastSignal = 0;
-	uint32_t tNow = millis ();
 
-	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	if ( TheOiler.MotorWork ( ulLastSignal, 1 ) == true )
 	{
-		ulLastSignal = tNow;
-		TheOiler.MotorWork ( 1 );
+		// signal was accepted
+		ulLastSignal = millis ();
 	}
 }
 
 void Motor3WorkSignal ( void )
 {
 	static uint32_t ulLastSignal = 0;
-	uint32_t tNow = millis ();
 
-	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	if ( TheOiler.MotorWork ( ulLastSignal, 2 ) == true )
 	{
-		ulLastSignal = tNow;
-		TheOiler.MotorWork ( 2 );
+		// signal was accepted
+		ulLastSignal = millis ();
 	}
 }
 
 void Motor4WorkSignal ( void )
 {
 	static uint32_t ulLastSignal = 0;
-	uint32_t tNow = millis ();
 
-	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	if ( TheOiler.MotorWork ( ulLastSignal, 3 ) == true )
 	{
-		ulLastSignal = tNow;
-		TheOiler.MotorWork ( 3 );
+		// signal was accepted
+		ulLastSignal = millis ();
 	}
 }
 
 void Motor5WorkSignal ( void )
 {
 	static uint32_t ulLastSignal = 0;
-	uint32_t tNow = millis ();
 
-	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	if ( TheOiler.MotorWork ( ulLastSignal, 4 ) == true )
 	{
-		ulLastSignal = tNow;
-		TheOiler.MotorWork ( 4 );
+		// signal was accepted
+		ulLastSignal = millis ();
 	}
 }
 
 void Motor6WorkSignal ( void )
 {
 	static uint32_t ulLastSignal = 0;
-	uint32_t tNow = millis ();
 
-	if ( ( tNow - ulLastSignal ) > DEBOUNCE_THRESHOLD )
+	if ( TheOiler.MotorWork ( ulLastSignal, 5 ) == true )
 	{
-		ulLastSignal = tNow;
-		TheOiler.MotorWork ( 5 );
+		// signal was accepted
+		ulLastSignal = millis ();
 	}
 }
 // list of ISRs for each possible motor
@@ -185,7 +179,7 @@ void OilerClass::SetupMotorPins ( uint8_t uiWorkPin, uint8_t uiWorkTarget )
 {
 	m_Motors.MotorInfo [ m_Motors.uiNumMotors ].uiWorkPin = uiWorkPin;
 	m_Motors.MotorInfo [ m_Motors.uiNumMotors ].uiWorkTarget = uiWorkTarget;
-
+	m_Motors.MotorInfo [ m_Motors.uiNumMotors ].uiWorkDebounce = DEBOUNCE_THRESHOLD;			// set default
 	PCIHandler.AddPin ( uiWorkPin, MotorISRs.MotorWorkCallback [ m_Motors.uiNumMotors ], MOTOR_WORK_SIGNAL_MODE, MOTOR_WORK_SIGNAL_PINMODE );
 	m_Motors.uiNumMotors++;
 }
@@ -257,34 +251,41 @@ bool OilerClass::IsMonitoringTargetWork ( void )
 	return m_OilerMode == ON_TARGET_ACTIVITY;
 }
 
-void OilerClass::MotorWork ( uint8_t uiMotorIndex )
+bool OilerClass::MotorWork ( uint32_t ulLastSignalTime, uint8_t uiMotorIndex )
 {
-	// One of Oiler motors has completed work
-	m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount++;
-	// check if it has hit target
-	if ( m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount >= NUM_MOTOR_WORK_EVENTS )
+	bool bResult = false;
+	// Check if this signal is within the debounce period
+	if ( millis () - ulLastSignalTime >= m_Motors.MotorInfo [ uiMotorIndex ].uiWorkDebounce )
 	{
-		// hit target, stop motor
-		m_Motors.MotorInfo [ uiMotorIndex ].Motor->Off ();
-
-		// have we stopped all motors
-		if ( AllMotorsStopped () )
+		bResult = true;
+		// One of Oiler motors has completed work
+		m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount++;
+		// check if it has hit target
+		if ( m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount >= NUM_MOTOR_WORK_EVENTS )
 		{
-			ClearError ();
-			// restart monitoring, if we have a machine
-			if ( m_pMachine != NULL && m_OilerMode != ON_TIME )
+			// hit target, stop motor
+			m_Motors.MotorInfo [ uiMotorIndex ].Motor->Off ();
+
+			// have we stopped all motors
+			if ( AllMotorsStopped () )
 			{
-				m_pMachine->RestartMonitoring ();
-				m_timeOilerStopped = millis ();
+				ClearError ();
+				// restart monitoring, if we have a machine
+				if ( m_pMachine != NULL && m_OilerMode != ON_TIME )
+				{
+					m_pMachine->RestartMonitoring ();
+					m_timeOilerStopped = millis ();
+				}
+				// reset start time count
+				if ( m_OilerMode == ON_TIME )
+				{
+					m_timeOilerStopped = millis ();
+				}
+				m_OilerStatus = IDLE;
 			}
-			// reset start time count
-			if ( m_OilerMode == ON_TIME )
-			{
-				m_timeOilerStopped = millis ();
-			}
-			m_OilerStatus = IDLE;
 		}
 	}
+	return bResult;
 }
 
 OilerClass::eStartMode OilerClass::GetStartMode ( void )
@@ -508,6 +509,17 @@ void OilerClass::SetMotorsForward ( uint8_t uiMotorIndex )
 	{
 		m_Motors.MotorInfo [ i ].Motor->SetDirection ( MotorClass::FORWARD );
 	}
+}
+
+bool OilerClass::SetMotorSensorDebounce ( uint8_t uiMotorIndex, uint16_t uiDelayms )
+{
+	bool bResult = false;
+	if ( uiMotorIndex < m_Motors.uiNumMotors )
+	{
+		m_Motors.MotorInfo [ uiMotorIndex ].uiWorkDebounce = uiDelayms;
+		bResult = true;
+	}
+	return bResult;
 }
 
 bool OilerClass::SetStartEventToTargetActiveTime ( uint32_t ulTargetSecs )

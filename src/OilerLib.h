@@ -68,6 +68,7 @@ public:
 	void				SetMotorsBackward ( uint8_t uiMotorIndex );					// set direction of specified motor
 	void				SetMotorsForward ( void );									// Set direction of all motors
 	void				SetMotorsForward ( uint8_t uiMotorIndex );					// Set direction of specified motor
+	bool				SetMotorSensorDebounce ( uint8_t uiMotorIndex, uint16_t uiDelayms );	// Set debounce delay of specified motor
 	bool				SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode );	// set mode to INPUT or INPUT_PULLUP for input sensor of specified motor
 	bool				SetStartEventToTargetActiveTime ( uint32_t ulTargetSecs );	// set time target machine (eg lathe) has power to be event that causes motors to restart oiling
 	bool				SetStartEventToTargetWork ( uint32_t ulTargetUnits );		// set amount of work done by target machine ( eg lathe) to be event that causes motors to restart oiling
@@ -88,7 +89,7 @@ public:
 
 
 /*---------------------- INTERNAL USE - DO NOT USE -----------------------------------*/
-	void				MotorWork ( uint8_t uiMotorIndex );							// Used internally by interrupt handler to capture signal from a motor sensor when output (oil) is seen
+	bool				MotorWork ( uint32_t ulLastSignalTime, uint8_t uiMotorIndex );	// Used internally by interrupt handler to capture signal from a motor sensor when output (oil) is seen
 	void				CheckTargetReady ( void );									// Checks if target is ready for oil
 	void				CheckElapsedTime ( void );									// Checks time running since oiler last finished - this is the basic version not using TargetMachine
 
@@ -110,7 +111,7 @@ protected:
 	uint32_t			m_timeOilerStopped;
 	uint8_t				m_uiAlertPin;												// pin to signal if Alert to be generated
 	uint16_t			m_ulAlertMultiple;											// Multiple of metric used to restart Oiler if motors are running in excess of AlertMultiple * metric
-	uint8_t				m_uiALertOnValue;											// value to set pin when alert in on
+	uint8_t				m_uiALertOnValue;											// value to set pin when alert is on
 
 	union																			// These values are mutually exclsuive so use same storage
 	{
@@ -123,7 +124,7 @@ protected:
 		MotorClass*				Motor;												// ptr to type of motor class
 		uint16_t				uiWorkCount;										// Number of work units (oil drips) seen
 		uint8_t					uiWorkTarget;										// Target number of work units (oil drips) from motor after which it is stopped
-		uint16_t				uiAlertThreshold;									// if motor has been running in excess of threshold then alert will be signalled, 0 = no threshold
+		uint16_t				uiWorkDebounce;										// ms that must pass before a new signal on uiWorkPin is recognise as real
 	} MOTOR_INFO;
 	struct																			
 	{
