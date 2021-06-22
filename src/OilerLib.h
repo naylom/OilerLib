@@ -35,14 +35,14 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				1.3
+#define		OILER_VERSION				1.4
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
 #define		MOTOR_WORK_SIGNAL_PINMODE	INPUT										// default value
 #define		ALERT_PIN_ERROR_STATE		HIGH										// default value
 #define		TIME_BETWEEN_OILING			30											// default value  - In seconds
-#define		NUM_MOTOR_WORK_EVENTS		3											// number of motor outputs (oil drips) after which motor is stopped and restarts waiting for mode threshold to occur
+#define		NUM_MOTOR_WORK_EVENTS		1											// number of motor outputs (oil drips) after which motor is stopped and restarts waiting for mode threshold to occur
 #define		DEBOUNCE_THRESHOLD			150UL										// milliseconds, increase if drip sensor is registering too many drips per single drip
 
 #include "PCIHandler.h"

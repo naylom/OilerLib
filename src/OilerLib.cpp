@@ -261,7 +261,7 @@ bool OilerClass::MotorWork ( uint32_t ulLastSignalTime, uint8_t uiMotorIndex )
 		// One of Oiler motors has completed work
 		m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount++;
 		// check if it has hit target
-		if ( m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount >= NUM_MOTOR_WORK_EVENTS )
+		if ( m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount >= m_Motors.MotorInfo[uiMotorIndex].uiWorkTarget )
 		{
 			// hit target, stop motor
 			m_Motors.MotorInfo [ uiMotorIndex ].Motor->Off ();
