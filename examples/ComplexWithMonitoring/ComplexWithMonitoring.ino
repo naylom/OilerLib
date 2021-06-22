@@ -92,7 +92,7 @@ void setup ()
 	TheOiler.AddMachine ( &TheMachine );
 
 	// Demonstrate how to turn on functionality that will generate a signal if oiling takes too long
-	if ( TheOiler.SetAlert ( ALERT_PIN, ALERT_THRESHOLD ) )
+	if ( TheOiler.SetAlert ( ALERT_PIN, ALERT_THRESHOLD ) == false )
 	{
 		Error ( F ( "Unable to add Alert feature to oiler, stopped" ) );
 		while ( 1 );
@@ -196,7 +196,7 @@ void loop ()
 #define CSI				F("\x1b[")
 #define SAVE_CURSOR		F("\x1b[s")
 #define RESTORE_CURSOR	F("\x1b[u")
-#define CLEAR_LINE		F("\x1b [2K")
+#define CLEAR_LINE		F("\x1b[2K")
 #define RESET_COLOURS   F("\x1b[0m")
 
 // colors
@@ -419,7 +419,7 @@ void Error ( String s )
 	// Clear error line
 	ClearLine ( ERROR_ROW );
 	// Output new error
-	COLOUR_AT ( FG_RED, BG_BLACK, ERROR_ROW, ERROR_COL, s );
+	COLOUR_AT ( FG_WHITE, BG_RED, ERROR_ROW, ERROR_COL, s );
 }
 
 void DisplayOilerStatus ( String s )

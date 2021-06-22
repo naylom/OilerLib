@@ -106,13 +106,13 @@ void OilerTmerCallback ( void )
 OilerClass::OilerClass ( TargetMachineClass* pMachine )
 {
 	m_pMachine				= pMachine;
-	m_OilerMode				= ON_TIME;
-	m_OilerStatus			= OFF;
-	m_ulOilTime				= TIME_BETWEEN_OILING;
+	m_OilerMode				= ON_TIME;					// default vvalue
+	m_OilerStatus			= OFF;						
+	m_ulOilTime				= TIME_BETWEEN_OILING;		//default value
 	m_Motors.uiNumMotors	= 0;
 	m_uiAlertPin			= NOT_A_PIN;
 	m_ulAlertMultiple		= 0UL;
-	m_uiALertOnValue		= ALERT_PIN_ERROR_STATE;
+	m_uiALertOnValue		= ALERT_PIN_ERROR_STATE;	// default value
 }
 
 bool OilerClass::On ()
@@ -233,7 +233,7 @@ bool OilerClass::IsOff ( void )
 
 bool OilerClass::IsIdle ()
 {
-	return m_OilerStatus == OFF;
+	return m_OilerStatus == IDLE;
 }
 
 bool OilerClass::IsMonitoringTime ( void )
@@ -387,6 +387,7 @@ void OilerClass::CheckElapsedTime ()
 					{
 						m_Motors.MotorInfo [ i ].Motor->On ();
 						m_Motors.MotorInfo [ i ].uiWorkCount = 0;
+						m_OilerStatus = OILING;
 					}
 				}
 				else
@@ -542,7 +543,8 @@ bool OilerClass::SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode )
 	bool bResult = false;
 	if ( ( uiMode == INPUT || uiMode == INPUT_PULLUP ) && uiMotorIndex < m_Motors.uiNumMotors )
 	{
-		pinMode ( m_Motors.MotorInfo [ 1 ].uiWorkPin, uiMode );
+		pinMode ( m_Motors.MotorInfo [ uiMotorIndex ].uiWorkPin, uiMode );
+		bResult = true;
 	}
 	return bResult;
 }
