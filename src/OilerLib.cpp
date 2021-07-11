@@ -113,6 +113,7 @@ OilerClass::OilerClass ( TargetMachineClass* pMachine )
 	m_uiAlertPin			= NOT_A_PIN;
 	m_ulAlertMultiple		= 0UL;
 	m_uiALertOnValue		= ALERT_PIN_ERROR_STATE;	// default value
+	m_bAlert				= false;
 }
 
 bool OilerClass::On ()
@@ -189,20 +190,17 @@ void	OilerClass::AddMachine ( TargetMachineClass* pMachine )
 	m_pMachine = pMachine;
 }
 
-bool	OilerClass::SetAlert ( uint8_t uiAlertPin, uint32_t ulAlertMultiple )
+void	OilerClass::SetAlert ( uint8_t uiAlertPin, uint32_t ulAlertMultiple )
 {
-	bool bResult = false;
 
+	m_uiAlertPin = uiAlertPin;
 	if ( uiAlertPin != NOT_A_PIN )
 	{
-		m_uiAlertPin = uiAlertPin;
 		pinMode ( m_uiAlertPin, OUTPUT );
-		ClearError ();
-		m_ulAlertMultiple = ulAlertMultiple;
-		bResult = true;
 	}
-
-	return bResult;
+	// no pin just do software error
+	ClearError ();
+	m_ulAlertMultiple = ulAlertMultiple;
 }
 
 bool OilerClass::SetAlertLevel ( uint8_t uiLevel )
@@ -210,8 +208,8 @@ bool OilerClass::SetAlertLevel ( uint8_t uiLevel )
 	bool bResult = false;
 	if ( uiLevel == HIGH || uiLevel == LOW )
 	{
-		// if changed
-		if ( m_uiALertOnValue != uiLevel )
+		// if changed and we have a pin
+		if ( m_uiALertOnValue != uiLevel && m_uiAlertPin != NOT_A_PIN )
 		{
 			digitalWrite ( m_uiAlertPin, uiLevel );
 			m_uiALertOnValue = uiLevel;
@@ -219,6 +217,11 @@ bool OilerClass::SetAlertLevel ( uint8_t uiLevel )
 		bResult = true;
 	}
 	return bResult;
+}
+
+bool OilerClass::IsAlert ( void )
+{
+	return m_bAlert;
 }
 
 bool OilerClass::IsOiling ( void )
@@ -406,11 +409,11 @@ void	OilerClass::CheckError ( uint32_t ulActual, uint32_t ulTarget )
 	{
 		if ( ulActual >= ulTarget * m_ulAlertMultiple )
 		{
-			// Serial.print ( "Actual " ); Serial.print ( ulActual ); Serial.print ( " Target " ); Serial.println ( ulTarget );
 			if ( m_uiAlertPin != NOT_A_PIN )
 			{
 				digitalWrite ( m_uiAlertPin, m_uiALertOnValue );
 			}
+			m_bAlert = true;
 		}
 	}
 }
@@ -421,6 +424,7 @@ void	OilerClass::ClearError ( void )
 	{
 		digitalWrite ( m_uiAlertPin, m_uiALertOnValue == HIGH ? LOW : HIGH );
 	}
+	m_bAlert = false;
 }
 
 uint16_t OilerClass::GetMotorWorkCount ( uint8_t uiMotorNum )
