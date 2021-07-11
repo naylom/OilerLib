@@ -19,7 +19,7 @@
 #define PUMP1_NUM_DRIPS					3			// number of drips after which motor 1 is paused
 #define PUMP2_NUM_DRIPS					1			// number of drips after which motor 2 is paused
 
-#define ALERT_PIN						19			// digital Pin to signal if not completed oiling in multiple of oiler start target (eg elapsed time / revs / powered on time)
+#define ALERT_PIN						19			// digital Pin to signal if not completed oiling in multiple of oiler start target (eg elapsed time / revs / powered on time), set to NOT_A_PIN if only using software monitoring as in loop() below
 
 void setup ()
 {
@@ -51,11 +51,7 @@ void setup ()
 
 	// Configure Alert if oil is delayed by 3x restart time (ie 60 secs), note this applies independently to all motors so if one is working correctly and second runs out of oil the alert will be generated 
 	// when the second pump fails the 3 x 20 threshold.
-	if ( TheOiler.SetAlert ( ALERT_PIN, 3 ) == false )
-	{
-		Serial.println ( F ( "Unable to add Alert config to oiler, stopped" ) );
-		while ( 1 );
-	}
+	TheOiler.SetAlert ( ALERT_PIN, 3 );
 
 	// Start Oiler
 	if ( TheOiler.On () == false )
@@ -68,7 +64,23 @@ void setup ()
 		Serial.println ( F ( "Oiler started" ) );
 	}
 }
+
 void loop ()
 {
+	static bool bLastAlertState = TheOiler.IsAlert ();
 
+	if ( TheOiler.IsAlert () != bLastAlertState )
+	{
+		// changed
+		bLastAlertState = bLastAlertState == true ? false : true;
+		if ( bLastAlertState )
+		{
+			Serial.println ( F ( "Alert is true" ) );
+		}
+		else
+		{
+			Serial.println ( F ( "Alert is false" ) );
+		}
+	}
+	delay ( 500 );
 }

@@ -62,7 +62,7 @@ public:
 	void				AddMachine ( TargetMachineClass* pMachine );				// optionally called to inform oiler we have a target machine that can be queried
 	bool				AddMotor ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// FourPin Stepper version
 	bool				AddMotor ( uint8_t uiPin, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// 1 pin relay version
-	bool				SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertMultiple );	// Set the pin to be signalled when oiling is delayed.
+	void				SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertMultiple );	// Set the pin to be signalled when oiling is delayed.
 	bool				SetAlertLevel ( uint8_t uiLevel );							// Set level of alert pin when in Alert State
 	void				SetMotorsBackward ( void );									// Set direction of all motors
 	void				SetMotorsBackward ( uint8_t uiMotorIndex );					// set direction of specified motor
@@ -82,6 +82,7 @@ public:
 	bool				IsMonitoringTargetWork ( void );							// true if monitoring target machine completing configured units of work (e.g. number of revs of lathe spindle)
 	bool				IsMonitoringTime ( void );									// true if oiling starts as a result of configured number of seconds elapsing
 	bool				IsMotorRunning ( uint8_t uiMotorNum );						// true if specified motor is running
+	bool				IsAlert ( void );											// true if in Alert state
 
 	uint16_t			GetMotorWorkCount ( uint8_t uiMotorNum );					// get number of work units (oil drips) seen from specified motor since last told to start
 	uint32_t			GetTimeOilerIdle ( void );									// returns time in seconds the Oiler has been idle (all motors off)
@@ -112,6 +113,7 @@ protected:
 	uint8_t				m_uiAlertPin;												// pin to signal if Alert to be generated
 	uint16_t			m_ulAlertMultiple;											// Multiple of metric used to restart Oiler if motors are running in excess of AlertMultiple * metric
 	uint8_t				m_uiALertOnValue;											// value to set pin when alert is on
+	bool				m_bAlert;													// true when in alert state
 
 	union																			// These values are mutually exclsuive so use same storage
 	{
