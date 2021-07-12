@@ -21,7 +21,8 @@ SetStartEventToTargetWork	KEYWORD2
 SetStartEventToTime	KEYWORD2
 IsIdle	KEYWORD2				
 IsOff	KEYWORD2			
-IsOiling	KEYWORD2		
+IsOiling	KEYWORD2	
+IsAlert KEYWORD2
 IsMonitoringTargetPower	KEYWORD2
 IsMonitoringTargetWork	KEYWORD2
 IsMonitoringTime	KEYWORD2 
