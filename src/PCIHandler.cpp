@@ -14,6 +14,13 @@ PCIHandlerClass::PCIHandlerClass ()
 }
 
 // This static function is called by a PCINT interrupt ISR
+
+/// <summary>
+/// static function called by PCINT interrupt handler.
+/// <para>compares current state of all 8 pins on port with saved previous state to identify which pins changed</para>
+/// <para>checks if there is a callback for any of the changed pins and invokes the callback</para>
+/// </summary>
+/// <param name="uiPortIdGeneratingInterrupt">which of the 3 mcicrocontroller ports, that each handles 8 pins, had a pin with a signal</param>
 void PCIHandlerClass::CheckPortPins ( uint8_t uiPortIdGeneratingInterrupt )
 {
 	uint8_t uiCurrentPCIReg = *portInputRegister ( uiPortIdGeneratingInterrupt );	// Get state of pins on this port
@@ -27,6 +34,11 @@ void PCIHandlerClass::CheckPortPins ( uint8_t uiPortIdGeneratingInterrupt )
 
 }
 
+/// <summary>
+/// checks list of PCI pins of interest against this port/pin and if a match is found invokes the configured callback
+/// </summary>
+/// <param name="uiChangedPins">byte bitmask of which pins have changed</param>
+/// <param name="uiPortIdGeneratingInterrupt">which port generated the pin change interrupt</param>
 void PCIHandlerClass::InvokeCallback ( uint8_t uiChangedPins, uint8_t uiPortIdGeneratingInterrupt )
 {
 	// check each entry to see if we need to invoke its callback
@@ -95,6 +107,14 @@ PCIData::PCIData ( void )
 	m_uiPinCount = 0;
 }
 
+/// <summary>
+/// Adds a callback to be invoked for specified pin
+/// </summary>
+/// <param name="uiDigitalPinNum">digital pin number to monitor</param>
+/// <param name="pInterruptFn">callback function to be invoked</param>
+/// <param name="uiState">change in state of interest, must be FALLING or RISING or CHANGE</param>
+/// <param name="uiMode">pinMode of digital pin, must be INPUT or INPUT_PULLUP</param>
+/// <returns>true if added successfully else false</returns>
 bool PCIData::AddPin ( uint8_t uiDigitalPinNum, InterruptCallback pInterruptFn, uint8_t uiState, uint8_t uiMode )
 {
 	bool bResult = false;
@@ -113,6 +133,10 @@ bool PCIData::AddPin ( uint8_t uiDigitalPinNum, InterruptCallback pInterruptFn, 
 	return bResult;
 }
 
+/// <summary>
+/// enables PCI interrupts for the pin specified
+/// </summary>
+/// <param name="uiPin">digital pin number</param>
 void PCIData::EnablePCI ( uint8_t uiPin )
 {
 	// enable PCI interrupts and set pin
@@ -120,6 +144,11 @@ void PCIData::EnablePCI ( uint8_t uiPin )
 	*digitalPinToPCICR ( uiPin ) |= ( 1 << digitalPinToPCICRbit ( uiPin ) );
 }
 
+/// <summary>
+/// Gets the callback configured for the specified pin
+/// </summary>
+/// <param name="uiPin">digital pin number</param>
+/// <returns>address of function or 0 if not found</returns>
 InterruptCallback PCIData::GetCallback ( uint8_t uiPin )
 {
 	InterruptCallback pResult = 0;
@@ -135,11 +164,20 @@ InterruptCallback PCIData::GetCallback ( uint8_t uiPin )
 	return pResult;
 }
 
+/// <summary>
+/// Checks if max number of PCI callbacks allowed has been met
+/// </summary>
+/// <returns>true if full, else false</returns>
 bool PCIData::IsFull ()
 {
 	return !( m_uiPinCount < MAX_PCI_PINS );
 }
 
+/// <summary>
+/// Checks if digital pin provided is already being handled
+/// </summary>
+/// <param name="uiPin">digital pin of interest</param>
+/// <returns>true if already being handled, else false</returns>
 bool PCIData::IsPinPresent ( uint8_t uiPin )
 {
 	bool bResult = false;

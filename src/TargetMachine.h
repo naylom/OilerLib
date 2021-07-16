@@ -48,7 +48,7 @@ public:
 	uint32_t		GetWorkUnits ( void );						// number of work units since oiler stopped
 	void			IncActiveTime ( uint32_t tActive );
 	void			GoneActive ( uint32_t tNow );
-	void			IncWorkUnit ( uint32_t ulIncAmoount );
+	void			IncWorkUnit ( uint32_t ulIncAmount );
 	bool			SetActiveTimeTarget ( uint32_t ulTargetSecs );
 	bool			SetWorkTarget ( uint32_t ulTargetUnits );
 	bool			SetActivePinMode ( uint8_t uiMode );		// set Active input pin to INPUT or INPUT_PULLUP

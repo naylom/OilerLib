@@ -35,6 +35,12 @@ TimerClass::TimerClass ( void )
 	interrupts ();
 }
 
+/// <summary>
+/// adds a callback routine to be called at specified interval
+/// </summary>
+/// <param name="Routine">address of callback routine with signature of void func ( void )</param>
+/// <param name="ulInterval">number of 1/4000 sec ticks after which callback should be invoked</param>
+/// <returns>true if max number of callbacks not exceeded and this callback is not alreasy registered. else false</returns>
 bool TimerClass::AddCallBack ( TimerCallback Routine, uint32_t ulInterval )
 {
 	bool bResult = false;
@@ -60,6 +66,11 @@ bool TimerClass::AddCallBack ( TimerCallback Routine, uint32_t ulInterval )
 	return bResult;
 }
 
+/// <summary>
+/// Removes specified callback from configured list
+/// </summary>
+/// <param name="Routine">address of callback routine with signature of void func ( void )</param>
+/// <returns>true if callback removed successfully, else false</returns>
 bool TimerClass::RemoveCallBack ( TimerCallback Routine )
 {
 	bool bResult = false;
@@ -85,21 +96,40 @@ bool TimerClass::RemoveCallBack ( TimerCallback Routine )
 	return bResult;
 }
 
+/// <summary>
+/// Gets the number of 1/4000 sec ticks required to pass before the callback whose index is provided is invoked
+/// </summary>
+/// <param name="uiIndex">zero based index of callback list entry required</param>
+/// <returns>number of 1/4000 sec ticks</returns>
 uint32_t TimerClass::GetInterval ( uint8_t uiIndex )
 {
 	return m_aFunctionIntervals [ uiIndex ];
 }
 
+/// <summary>
+/// Get the address of the callback whose index is provided
+/// </summary>
+/// <param name="uiIndex">zero based index of callback list entry required</param>
+/// <returns>callback function address</returns>
 TimerCallback	TimerClass::GetCallback ( uint8_t uiIndex )
 {
 	return m_aFunctions [ uiIndex ];
 }
 
+/// <summary>
+/// Clears callback list
+/// </summary>
+/// <param name="">none</param>
 void TimerClass::ClearAllCallBacks ( void )
 {
 	m_uiCallbackCount = 0;
 }
 
+/// <summary>
+/// Gets the number of callbacks that have been configured
+/// </summary>
+/// <param name="">none</param>
+/// <returns>number of callbacks in list</returns>
 uint8_t TimerClass::GetNumCallbacks ( void )
 {
 	return m_uiCallbackCount;
@@ -107,6 +137,11 @@ uint8_t TimerClass::GetNumCallbacks ( void )
 
 // Interrupt routine called by system timer
 //ISR ( TIMER1_OVF_vect )
+
+/// <summary>
+/// hardware Timer2 interrupt - called every 1/4000 second. Checks if any configured callback is due to be called and invokes if necessary
+/// </summary>
+/// <param name="">none</param>
 ISR ( TIMER2_COMPA_vect )
 {
 	static uint32_t ulCount = 0;
