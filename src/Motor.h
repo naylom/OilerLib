@@ -2,7 +2,7 @@
 //
 // (c) 2021 Mark Naylor
 //
-// defines base class for motors to drive oiler pump
+// defines base class for motors 
 //
 
 #ifndef _MOTOR_h
@@ -13,12 +13,23 @@
 #else
 #include "WProgram.h"
 #endif
+//#include "State.h"
+#define CALL_MEMBER_FN(object,ptrToMember)  ((object).*(ptrToMember))
 
 class MotorClass
 {
 public:
-	enum			eDirection { FORWARD, BACKWARD };
-	enum			eState { STOPPED = 1, RUNNING };
+	enum			eDirection
+	{
+		FORWARD, 
+		BACKWARD
+	};
+	enum			eState
+	{
+
+		STOPPED = 1, RUNNING
+	};
+
 	virtual bool	On ( void );						// Needs to be overriden to implement details of how motor is enabled
 	virtual bool	Off ( void );
 	uint32_t		GetTimeMotorStarted ( void );		// returns millis that it started
@@ -38,8 +49,6 @@ protected:
 	eState		m_eState;
 	eDirection	m_eDir;
 };
-
-//extern MotorClass Motor;
 
 #endif
 

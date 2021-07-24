@@ -19,6 +19,7 @@ SetMotorSensorDebounce	KEYWORD2
 SetStartEventToTargetActiveTime	KEYWORD2
 SetStartEventToTargetWork	KEYWORD2
 SetStartEventToTime	KEYWORD2
+SetStopTarget	KEYWORD2
 IsIdle	KEYWORD2				
 IsOff	KEYWORD2			
 IsOiling	KEYWORD2	

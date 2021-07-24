@@ -33,7 +33,7 @@
 #define	MACHINE_WORK_UNITS_TARGET		3			// Number of signals that indicates machine is ready (eg how many revolutions of spindle)
 
 #define ALERT_PIN						19			// digital Pin to signal if not completed oiling in multiple of oiler start target (eg elapsed time / revs / powered on time)
-#define ALERT_THRESHOLD					2			// Example only - set to twice normal target
+#define ALERT_THRESHOLD					(2 * ELAPSED_TIME_SECS ) // Example only - set to twice normal target
 
 #define ELAPSED_TIME_SECS				30			// Example only - restart paused pumps after 30 seconds
 #define POWERED_TIME_SECS				20			// Example only - restart paused pumps after 20 seconds of target machine having power
@@ -51,30 +51,19 @@ void setup ()
 		Error ( F ( "Unable to add stepper motor to oiler, stopped" ) );
 		while ( 1 );
 	}
-	// Add second motor on pin 8,9,10,11
-	if ( TheOiler.AddMotor ( 8, 9, 10, 11, STEPPER_SPEED_DEFAULT, OILED_DEVICE_ACTIVE_PIN2, PUMP2_NUM_DRIPS ) == false )
+	// Add second dc motor on pin 8
+	if ( TheOiler.AddMotor ( 8, OILED_DEVICE_ACTIVE_PIN2, PUMP2_NUM_DRIPS ) == false )
 	{
-		Error ( F ( "Unable to add stepper motor to oiler, stopped" ) );
+		Error ( F ( "Unable to add dc motor to oiler, stopped" ) );
 		while ( 1 );
 	}
 
-	/*
-	*		Alternatively if using relays to drive a dc motor replace the above with the code commented out below
-	*/
-	/*
-	// add 1 pin relay motor on Pin 4
-	if ( TheOiler.AddMotor ( 4, OILED_DEVICE_ACTIVE_PIN1, PUMP1_NUM_DRIPS ) == false )
+	// example of how to change pinmode of input pin used to monitor pump output (ie oil drips)
+	if ( TheOiler.SetMotorWorkPinMode ( 1, INPUT_PULLUP ) == false )
 	{
-		Error ( F ( "Unable to add relay motor to oiler, stopped" ) );
+		Error ( F ( "Unable set PinMode on dc motor, stopped" ) );
 		while ( 1 );
 	}
-	// add second 1 pin relay motor on Pin 5
-	if ( TheOiler.AddMotor ( 5, OILED_DEVICE_ACTIVE_PIN2, PUMP2_NUM_DRIPS ) == false )
-	{
-		Error ( F ( "Unable to add relay motor to oiler, stopped" ) );
-		while ( 1 );
-	}
-	*/
 
 	// This next step is optional, the Oiler will work without it. It simply gives a better experience.
 	// TheMachine represents the machine being oiled and uses two pins to signal when the machine is powered on (Active) and also when it has completed a 
@@ -92,11 +81,7 @@ void setup ()
 	TheOiler.AddMachine ( &TheMachine );
 
 	// Demonstrate how to turn on functionality that will generate a signal if oiling takes too long
-	if ( TheOiler.SetAlert ( ALERT_PIN, ALERT_THRESHOLD ) == false )
-	{
-		Error ( F ( "Unable to add Alert feature to oiler, stopped" ) );
-		while ( 1 );
-	}
+	TheOiler.SetAlert ( ALERT_PIN, ALERT_THRESHOLD );
 
 	// By default the oiler will work on an elapsed time basis
 
@@ -276,24 +261,24 @@ void DisplayStats ( void )
 		if ( uiWorkDone != uiLastCount [ i ] )
 		{
 			uiLastCount [ i ] = uiWorkDone;
-			ClearPartofLine ( STATS_ROW + i * 2 + 1, STATS_RESULT_COL, MAX_COLS - STATS_RESULT_COL );
-			AT ( STATS_ROW + i * 2 + 1, STATS_RESULT_COL, String ( uiWorkDone ) );
+			ClearPartofLine ( STATS_ROW + i * 3 + 1, STATS_RESULT_COL, MAX_COLS - STATS_RESULT_COL );
+			AT ( STATS_ROW + i * 3 + 1, STATS_RESULT_COL, String ( uiWorkDone ) );
 		}
 
 		bool bResult = TheOiler.IsMotorRunning ( i );
 		if ( bResult != bLastState [ i ] )
 		{
 			bLastState [ i ] = bResult;
-			ClearPartofLine ( STATS_ROW + i * 2 + 2, STATS_RESULT_COL, MAX_COLS - STATS_RESULT_COL );
-			AT ( STATS_ROW + i * 2 + 2, STATS_RESULT_COL, bResult == true ? F ( "Running" ) : F ( "Stopped" ) );
+			ClearPartofLine ( STATS_ROW + i * 3 + 2, STATS_RESULT_COL, MAX_COLS - STATS_RESULT_COL );
+			AT ( STATS_ROW + i * 3 + 2, STATS_RESULT_COL, bResult == true ? F ( "Running" ) : F ( "Stopped" ) );
 		}
 
 		uint32_t ulResult = TheOiler.GetTimeSinceMotorStarted ( i );
 		if ( ulResult != ulLastMotorRunTime [ i ] )
 		{
 			ulLastMotorRunTime [ i ] = ulResult;
-			ClearPartofLine ( STATS_ROW + i * 2 + 3, STATS_RESULT_COL, MAX_COLS - STATS_RESULT_COL );
-			AT ( STATS_ROW + i * 2 + 3, STATS_RESULT_COL, String ( ulResult ) );
+			ClearPartofLine ( STATS_ROW + i * 3 + 3, STATS_RESULT_COL, MAX_COLS - STATS_RESULT_COL );
+			AT ( STATS_ROW + i * 3 + 3, STATS_RESULT_COL, String ( ulResult ) );
 		}
 	}
 

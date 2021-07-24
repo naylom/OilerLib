@@ -7,26 +7,40 @@
 
 #include "RelayMotor.h"
 
-RelayMotorClass::RelayMotorClass ( uint8_t uiPin ) : MotorClass ( 0 )
+RelayMotorClass::RelayMotorClass ( uint8_t uiRelayPin, uint8_t uiWorkPin, uint32_t ulWorkThreshold, uint32_t ulDebouncems, uint32_t ulTimeThreshold ) : OilerMotorClass ( uiWorkPin, ulWorkThreshold, ulDebouncems, 0, ulTimeThreshold )
 {
 	SetDirection ( FORWARD );
-	m_uiPin = uiPin;
-	pinMode ( m_uiPin, OUTPUT );
+	m_uiRelayPin = uiRelayPin;
+	pinMode ( m_uiRelayPin, OUTPUT );
 }
 
-bool RelayMotorClass::On ( void )
+/// <summary>
+/// Motor specific function to idle motor
+/// </summary>
+void RelayMotorClass::Idle ()
 {
-	digitalWrite ( m_uiPin, HIGH );
-	MotorClass::On ();
-	return true;
+	// Idle motor - for relay this means same as power off
+	PowerOff ();
 }
 
-bool RelayMotorClass::Off ( void )
+/// <summary>
+/// Motor specific function to Start motor
+/// </summary>
+void RelayMotorClass::Start ()
 {
-	digitalWrite ( m_uiPin, LOW );
-	MotorClass::Off ();
-	return true;
+	// Start motor - for relay this means switch on
+	digitalWrite ( m_uiRelayPin, HIGH );
 }
+
+/// <summary>
+/// Motor specific function to power off
+/// </summary>
+void RelayMotorClass::PowerOff ()
+{
+	// power off motor - for relay this means switch off
+	digitalWrite ( m_uiRelayPin, LOW );
+}
+
 
 void RelayMotorClass::SetDirection ( eDirection Direction )
 {
@@ -34,7 +48,3 @@ void RelayMotorClass::SetDirection ( eDirection Direction )
 	MotorClass::SetDirection ( Direction );
 }
 
-MotorClass::eState RelayMotorClass::GetMotorState ( void )
-{
-	return MotorClass::GetMotorState ();
-}

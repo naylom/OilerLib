@@ -143,7 +143,7 @@ bool TargetMachineClass::MachineUnitsDone ( void )
 }
 
 /// <summary>
-/// checks if the target machine has met or exceeded teh threshold set for time with power
+/// checks if the target machine has met or exceeded the threshold set for time with power
 /// </summary>
 /// <param name="">none</param>
 /// <returns>true if threshold met or exceeded, else false</returns>
@@ -181,6 +181,40 @@ TargetMachineClass::eMachineState TargetMachineClass::IsReady ( void )
 		m_timeActiveStarted = tNow;
 	}
 	return m_State;
+}
+
+/// <summary>
+/// Checks if TargetMachine has exceeded AlertThreshold in work units
+/// </summary>
+/// <param name="uiAlertThreshold">Value of alert threshold in seconds or units of work</param>
+/// <returns></returns>
+bool TargetMachineClass::IsWorkAlert ( uint16_t uiAlertThreshold )
+{
+	bool bResult = false;
+
+	if ( m_ulWorkUnitCount >= uiAlertThreshold )
+	{
+		bResult = true;
+	}
+
+	return bResult;
+}
+
+/// <summary>
+/// Checks if TargetMachine has exceeded AlertThreshold in work units
+/// </summary>
+/// <param name="uiAlertThreshold">Value of alert threshold in seconds or units of work</param>
+/// <returns></returns>
+bool TargetMachineClass::IsTimeAlert ( uint16_t uiAlertThreshold )
+{
+	bool bResult = false;
+
+	if ( m_timeActive >= uiAlertThreshold )
+	{
+		bResult = true;
+	}
+
+	return bResult;
 }
 
 /// <summary>

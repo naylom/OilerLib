@@ -14,7 +14,7 @@
 #else
 #include "WProgram.h"
 #endif
-#include "Motor.h"
+#include "OilerMotor.h"
 #include "OilerLib.h"
 
 #define NUM_PINS        4
@@ -23,26 +23,28 @@
 #define STEPPER_MODE    HALF_STEPS
 #define NUM_PHASES      ( NUM_PINS * STEPPER_MODE )
 
-class FourPinStepperMotorClass : MotorClass
+class FourPinStepperMotorClass : public OilerMotorClass
 {
 public:
 
-    enum            eStatus { MOVING, STATIONARY, STOPPED };
-    FourPinStepperMotorClass ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed );
+    FourPinStepperMotorClass ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint8_t uiWorkPin, uint32_t ulWorkThreshold, uint32_t ulDebouncems, uint32_t ulSpeed, uint16_t ulTimeThreshold );
     void            SetDirection ( eDirection Direction );
     void            NextStep ( void );
 
+    // Machine specific implmentation of base virtual pure functions
+    void			Idle ();
+    void			Start ();
+    void			PowerOff ();
+
     bool            On ( void );
     bool            Off ( void );
-    MotorClass::eState GetMotorState ( void );
 
 protected:
-    uint8_t         m_uiPins [ NUM_PINS ];  // Array of pins used to output signals to stepper driver
+                    uint8_t         m_uiPins [ NUM_PINS ];  // Array of pins used to output signals to stepper driver
     volatile        uint8_t         m_uiPhase;              // The current phase of stepper (in half mode we have 8 phases numbered 0 - 7)
-    uint32_t        m_ulStepInterval;       // the delay time between micros
-    uint32_t        m_ulLastStepTime;       // the last step time in micros
-    uint32_t        m_ulNextStepTime;       // time next step due in micros
-    eStatus         m_eState;               // keeps track of state of driver    
+                    uint32_t        m_ulStepInterval;       // the delay time between micros
+                    uint32_t        m_ulLastStepTime;       // the last step time in micros
+                    uint32_t        m_ulNextStepTime;       // time next step due in micros
 
     void            StepCW ( void );                        // Move motor 1 step in clockwise direction
     void            StepCCW ( void );                       // Move motor 1 step in conunter clock wise direction

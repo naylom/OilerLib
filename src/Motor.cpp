@@ -16,6 +16,7 @@ MotorClass::MotorClass ( uint32_t ulSpeed )
 	m_eDir = FORWARD;
 }
 
+
 bool MotorClass::On ( void )
 {
 	m_ulTimeStartedms = millis ();
@@ -73,4 +74,3 @@ void MotorClass::SetDirection ( eDirection eDir )
 }
 
 
-// MotorClass Motor;

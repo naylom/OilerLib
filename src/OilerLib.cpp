@@ -6,19 +6,15 @@
 #include "OilerLib.h"
 #include "Timer.h"
 #include "PCIHandler.h"
+
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 1 has produced a unit of work
 /// </summary>
 /// <param name="">none</param>
 void Motor1WorkSignal ( void )
 {
-	static uint32_t ulLastSignal = 0;
+	TheOiler.MotorWork ( 0 );
 
-	if ( TheOiler.MotorWork ( ulLastSignal, 0 ) == true )
-	{
-		// signal was accepted
-		ulLastSignal = millis ();
-	}
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 2 has produced a unit of work
@@ -26,13 +22,8 @@ void Motor1WorkSignal ( void )
 /// <param name="">none</param>
 void Motor2WorkSignal ( void )
 {
-	static uint32_t ulLastSignal = 0;
-
-	if ( TheOiler.MotorWork ( ulLastSignal, 1 ) == true )
-	{
-		// signal was accepted
-		ulLastSignal = millis ();
-	}
+	//TheOiler.MotorWork ( 1 );
+	TheOiler.GetOilerMotor ( 1 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 3 has produced a unit of work
@@ -40,13 +31,8 @@ void Motor2WorkSignal ( void )
 /// <param name="">none</param>
 void Motor3WorkSignal ( void )
 {
-	static uint32_t ulLastSignal = 0;
-
-	if ( TheOiler.MotorWork ( ulLastSignal, 2 ) == true )
-	{
-		// signal was accepted
-		ulLastSignal = millis ();
-	}
+	//TheOiler.MotorWork ( 2 );
+	TheOiler.GetOilerMotor ( 2 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 4 has produced a unit of work
@@ -54,13 +40,8 @@ void Motor3WorkSignal ( void )
 /// <param name="">none</param>
 void Motor4WorkSignal ( void )
 {
-	static uint32_t ulLastSignal = 0;
-
-	if ( TheOiler.MotorWork ( ulLastSignal, 3 ) == true )
-	{
-		// signal was accepted
-		ulLastSignal = millis ();
-	}
+	//TheOiler.MotorWork ( 3 );
+	TheOiler.GetOilerMotor ( 3 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 5 has produced a unit of work
@@ -68,13 +49,8 @@ void Motor4WorkSignal ( void )
 /// <param name="">none</param>
 void Motor5WorkSignal ( void )
 {
-	static uint32_t ulLastSignal = 0;
-
-	if ( TheOiler.MotorWork ( ulLastSignal, 4 ) == true )
-	{
-		// signal was accepted
-		ulLastSignal = millis ();
-	}
+	//TheOiler.MotorWork ( 4 );
+	TheOiler.GetOilerMotor ( 4 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 6 has produced a unit of work
@@ -82,13 +58,8 @@ void Motor5WorkSignal ( void )
 /// <param name="">none</param>
 void Motor6WorkSignal ( void )
 {
-	static uint32_t ulLastSignal = 0;
-
-	if ( TheOiler.MotorWork ( ulLastSignal, 5 ) == true )
-	{
-		// signal was accepted
-		ulLastSignal = millis ();
-	}
+	//TheOiler.MotorWork ( 5 );
+	TheOiler.GetOilerMotor ( 5 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
 }
 // list of ISRs for each motor upto max allowed
 typedef void ( *Callback )( void );
@@ -108,8 +79,9 @@ struct
 /// Callback from interrupt based timer to check if restart event has been met and motors need restarting
 /// </summary>
 /// <param name=""></param>
-void OilerTmerCallback ( void )
+void OilerTimerCallback ( void )
 {
+	TheOiler.CheckMotors ();
 	if ( TheOiler.IsOff () == false )
 	{
 		// Invoked once per second to check if oiler needs starting
@@ -132,10 +104,10 @@ OilerClass::OilerClass ( TargetMachineClass* pMachine )
 	m_pMachine				= pMachine;
 	m_OilerMode				= ON_TIME;					// default vvalue
 	m_OilerStatus			= OFF;						
-	m_ulOilTime				= TIME_BETWEEN_OILING;		//default value
+	m_uiOilTime				= TIME_BETWEEN_OILING;		//default value
 	m_Motors.uiNumMotors	= 0;
 	m_uiAlertPin			= NOT_A_PIN;
-	m_ulAlertMultiple		= 0UL;
+	m_uiAlertThreshold		= 0UL;
 	m_uiALertOnValue		= ALERT_PIN_ERROR_STATE;	// default value
 	m_bAlert				= false;
 }
@@ -151,8 +123,7 @@ bool OilerClass::On ()
 	{
 		for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 		{
-			m_Motors.MotorInfo [ i ].Motor->On ();
-			m_Motors.MotorInfo [ i ].uiWorkCount = 0;
+			m_Motors.MotorInfo [ i ].Motor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_ON );
 		}
 		// if we have a machine, start monitoring
 		if ( m_OilerMode != ON_TIME && m_pMachine != NULL )
@@ -160,12 +131,25 @@ bool OilerClass::On ()
 			m_pMachine->RestartMonitoring ();
 		}
 
-		TheTimer.AddCallBack ( OilerTmerCallback, RESOLUTION );		// callback once per sec
+		TheTimer.AddCallBack ( OilerTimerCallback, RESOLUTION );		// callback once per sec
 		m_OilerStatus = OILING;
 		bResult = true;
 	}
 	return bResult;
 }
+
+/// <summary>
+/// Invoke motor to process output event and if status has changed check if all motors now off.
+/// </summary>
+/// <param name="uiMotorIndex"></param>
+void OilerClass::MotorWork ( uint8_t uiMotorIndex )
+{
+	if ( TheOiler.GetOilerMotor ( uiMotorIndex )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN ) )
+	{
+		TheOiler.CheckMotors ();
+	}
+}
+
 /// <summary>
 /// turns all motors off
 /// </summary>
@@ -173,7 +157,7 @@ void OilerClass::Off ()
 {
 	for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 	{
-		m_Motors.MotorInfo [ i ].Motor->Off ();
+		m_Motors.MotorInfo [ i ].Motor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_OFF );
 	}
 	m_OilerStatus = OFF;
 	m_timeOilerStopped = millis ();
@@ -192,11 +176,16 @@ void OilerClass::Off ()
 bool OilerClass::AddMotor ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed, uint8_t uiWorkPin, uint8_t uiWorkTarget )
 {
 	bool bResult = false;
-	if ( m_Motors.uiNumMotors < MAX_MOTORS /* && digitalPinToInterrupt (uiWorkPin) != NOT_AN_INTERRUPT */ )
+	if ( m_Motors.uiNumMotors < MAX_MOTORS )
 	{
 		// space to add another motor
-		m_Motors.MotorInfo [ m_Motors.uiNumMotors ].Motor = ( MotorClass* )new FourPinStepperMotorClass ( uiPin1, uiPin2, uiPin3, uiPin4, ulSpeed );
+		m_Motors.MotorInfo [ m_Motors.uiNumMotors ].Motor = new FourPinStepperMotorClass ( uiPin1, uiPin2, uiPin3, uiPin4, uiWorkPin, uiWorkTarget, DEBOUNCE_THRESHOLD, ulSpeed, m_uiOilTime );
 		SetupMotorPins ( uiWorkPin, uiWorkTarget );
+		// ensure alert threshold exceeds work target
+		if ( m_OilerMode == ON_TIME && m_uiAlertThreshold <= uiWorkTarget )
+		{
+			m_uiAlertThreshold = uiWorkTarget + 1;
+		}
 		bResult = true;
 	}
 	return bResult;
@@ -204,18 +193,22 @@ bool OilerClass::AddMotor ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint
 /// <summary>
 /// Adds a new relay based motor to oiler.
 /// </summary>
-/// <param name="uiPin">digital pin to signal to turn on relay and hence motor</param>
+/// <param name="uiRelayPin">digital pin to signal to turn on relay and hence motor</param>
 /// <param name="uiWorkPin">digital pin that signals when motor has caused a unit of work (eg oil drip) to be produced</param>
 /// <param name="uiWorkTarget">number of work units after which motor is turned off</param>
 /// <returns>false if number of motors exceeds maximum, else true</returns>
-bool OilerClass::AddMotor ( uint8_t uiPin, uint8_t uiWorkPin, uint8_t uiWorkTarget )
+bool OilerClass::AddMotor ( uint8_t uiRelayPin, uint8_t uiWorkPin, uint8_t uiWorkTarget )
 {
 	bool bResult = false;
 	if ( m_Motors.uiNumMotors < MAX_MOTORS )
 	{
 		// space to add another motor
-		m_Motors.MotorInfo [ m_Motors.uiNumMotors ].Motor = ( MotorClass* )new RelayMotorClass ( uiPin );
+		m_Motors.MotorInfo [ m_Motors.uiNumMotors ].Motor = new RelayMotorClass ( uiRelayPin, uiWorkPin, uiWorkTarget, DEBOUNCE_THRESHOLD, m_uiOilTime );
 		SetupMotorPins ( uiWorkPin, uiWorkTarget );
+		if ( m_OilerMode == ON_TIME && m_uiAlertThreshold <= uiWorkTarget )
+		{
+			m_uiAlertThreshold = uiWorkTarget + 1;
+		}
 		bResult = true;
 	}
 	return bResult;
@@ -227,9 +220,6 @@ bool OilerClass::AddMotor ( uint8_t uiPin, uint8_t uiWorkPin, uint8_t uiWorkTarg
 /// <param name="uiWorkTarget">number of units of work (eg oil drips) after which motor is stopped</param>
 void OilerClass::SetupMotorPins ( uint8_t uiWorkPin, uint8_t uiWorkTarget )
 {
-	m_Motors.MotorInfo [ m_Motors.uiNumMotors ].uiWorkPin = uiWorkPin;
-	m_Motors.MotorInfo [ m_Motors.uiNumMotors ].uiWorkTarget = uiWorkTarget;
-	m_Motors.MotorInfo [ m_Motors.uiNumMotors ].uiWorkDebounce = DEBOUNCE_THRESHOLD;			// set default
 	PCIHandler.AddPin ( uiWorkPin, MotorISRs.MotorWorkCallback [ m_Motors.uiNumMotors ], MOTOR_WORK_SIGNAL_MODE, MOTOR_WORK_SIGNAL_PINMODE );
 	m_Motors.uiNumMotors++;
 }
@@ -246,7 +236,7 @@ void	OilerClass::AddMachine ( TargetMachineClass* pMachine )
 /// </summary>
 /// <param name="uiAlertPin">pin on which to signal when in alert state, if NOT_A_PIN no signal will be output</param>
 /// <param name="ulAlertMultiple">multiple of restart threshold after which alert is generated</param>
-void	OilerClass::SetAlert ( uint8_t uiAlertPin, uint32_t ulAlertMultiple )
+void	OilerClass::SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertThreshold )
 {
 	m_uiAlertPin = uiAlertPin;
 	if ( uiAlertPin != NOT_A_PIN )
@@ -255,7 +245,7 @@ void	OilerClass::SetAlert ( uint8_t uiAlertPin, uint32_t ulAlertMultiple )
 	}
 	// no pin just do software error
 	ClearError ();
-	m_ulAlertMultiple = ulAlertMultiple;
+	m_uiAlertThreshold = uiAlertThreshold;
 }
 /// <summary>
 /// Sets whether the alert pin should be held HIGH or LOW when in alert state
@@ -341,48 +331,30 @@ bool OilerClass::IsMonitoringTargetWork ( void )
 	return m_OilerMode == ON_TARGET_ACTIVITY;
 }
 /// <summary>
-/// processes a signal that a motor has produced a unit of work e.g. oil drip. Must exceed debounce threshold to be valid
-/// <para>if motor has now produced its required number of units it is turned off</para>
-/// <para>if this is last of motors to be turned off, then TheOiler state is changed to OFF, any alerts are cleared and system awaits next restart event</para>
+/// checks if all motors are idle and updates status as necessary, called from timer interrupt
 /// </summary>
-/// <param name="ulLastSignalTime">time in millisends of prior signal</param>
-/// <param name="uiMotorIndex">zero based index of motor whose output generated signal</param>
-/// <returns>true if signal after debounce period</returns>
-bool OilerClass::MotorWork ( uint32_t ulLastSignalTime, uint8_t uiMotorIndex )
+void OilerClass::CheckMotors ()
 {
-	bool bResult = false;
-	// Check if this signal is within the debounce period
-	if ( millis () - ulLastSignalTime >= m_Motors.MotorInfo [ uiMotorIndex ].uiWorkDebounce )
+	// have we stopped all motors
+	if ( IsOiling () )
 	{
-		bResult = true;
-		// One of Oiler motors has completed work
-		m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount++;
-		// check if it has hit target
-		if ( m_Motors.MotorInfo [ uiMotorIndex ].uiWorkCount >= m_Motors.MotorInfo[uiMotorIndex].uiWorkTarget )
+		if ( AllMotorsStopped () )
 		{
-			// hit target, stop motor
-			m_Motors.MotorInfo [ uiMotorIndex ].Motor->Off ();
-
-			// have we stopped all motors
-			if ( AllMotorsStopped () )
+			ClearError ();
+			// restart monitoring, if we have a machine
+			if ( m_pMachine != NULL && m_OilerMode != ON_TIME )
 			{
-				ClearError ();
-				// restart monitoring, if we have a machine
-				if ( m_pMachine != NULL && m_OilerMode != ON_TIME )
-				{
-					m_pMachine->RestartMonitoring ();
-					m_timeOilerStopped = millis ();
-				}
-				// reset start time count
-				if ( m_OilerMode == ON_TIME )
-				{
-					m_timeOilerStopped = millis ();
-				}
-				m_OilerStatus = IDLE;
+				m_pMachine->RestartMonitoring ();
+				m_timeOilerStopped = millis ();
 			}
+			// reset start time count
+			if ( m_OilerMode == ON_TIME )
+			{
+				m_timeOilerStopped = millis ();
+			}
+			m_OilerStatus = IDLE;
 		}
 	}
-	return bResult;
 }
 /// <summary>
 /// Gets the restart mode of the oiler system if set
@@ -408,48 +380,50 @@ OilerClass::eStatus OilerClass::GetStatus ( void )
 /// <param name="">none</param>
 void OilerClass::CheckTargetReady ( void )
 {
-	static uint32_t ulOilingFailed = 0;
-
 	switch ( m_OilerMode )
 	{
 		case ON_TARGET_ACTIVITY:
-			if ( m_pMachine->MachineUnitsDone () )
+			if ( IsOiling() )
 			{
-				if ( m_OilerStatus == OILING )
+				// still oiling so check we haven't exceeded the alert threshold
+				if ( m_pMachine->IsWorkAlert ( m_uiWorkTarget ) )
 				{
-					// Still Oiling and machine is ready for more oil - one or more motors isn't outputting in time
-					ulOilingFailed++;
-					CheckError ( ulOilingFailed, 1 );
+					SetError ();
 				}
-				else
+			}
+			else if ( IsIdle () )
+			{
+				// check if we should restart motors
+				if ( m_pMachine->MachineUnitsDone () )
 				{
-					ulOilingFailed = 0;
+					On ();
+					m_pMachine->RestartMonitoring ();
 				}
-				On ();
-				m_pMachine->RestartMonitoring ();
 			}
 			break;
 
 		case ON_POWERED_TIME:
-			if ( m_pMachine->MachinePoweredTimeExpired () )
+			if ( IsOiling () )
 			{
-				if ( m_OilerStatus == OILING )
+				// still oiling so check we haven't exceeded the alert threshold
+				if ( m_pMachine->IsTimeAlert ( m_uiOilTime ) )
 				{
-					// Still Oiling and machine is ready for more oil - one or more motors isn't outputting in time
-					ulOilingFailed++;
-					CheckError ( ulOilingFailed, 1 );
+					SetError ();
 				}
-				else
+			}
+			else if ( IsIdle () )
+			{
+				// check if we should restart motors
+				if ( m_pMachine->MachinePoweredTimeExpired () )
 				{
-					ulOilingFailed = 0;
+					On ();
+					m_pMachine->RestartMonitoring ();
 				}
-				On ();
-				m_pMachine->RestartMonitoring ();
 			}
 			break;
 
-		default:		// do nothing, shouldn't get here
-			break;
+		default:
+			break;		// do nothing, shouldn't get here
 	}
 }
 
@@ -492,50 +466,61 @@ void OilerClass::CheckElapsedTime ()
 	// check if motor should be restarted
 	if ( GetStatus () != OFF )
 	{
+		// Oiler is on
 		if ( m_Motors.uiNumMotors > 0 )
 		{
-			uint32_t tNow = millis ();
+			// motors configured
 			for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 			{
-				// check if motor not running
-				if ( m_Motors.MotorInfo [ i ].Motor->GetMotorState () == MotorClass::STOPPED )
+				m_Motors.MotorInfo [ i ].Motor->Action ( OilerMotorClass::eOilerMotorEvents::TIMER );
+				if ( m_Motors.MotorInfo [ i ].Motor->IsMoving() )
 				{
-					// check elapsed time
-					if ( ( tNow - m_Motors.MotorInfo [ i ].Motor->GetTimeMotorStopped () ) / 1000 > m_ulOilTime )
-					{
-						m_Motors.MotorInfo [ i ].Motor->On ();
-						m_Motors.MotorInfo [ i ].uiWorkCount = 0;
-						m_OilerStatus = OILING;
-					}
-				}
-				else
-				{
-					// Check motor not running beyond expected time
-					CheckError ( m_Motors.MotorInfo [ i ].Motor->GetTimeMotorRunning (), m_ulOilTime );
+					m_OilerStatus = OILING;
+					// check if still oiling past alert threshold
+					CheckError ( m_Motors.MotorInfo [ i ].Motor->GetTimeMotorRunning () );
 				}
 			}
 		}
 	}
 }
+
+/// <summary>
+/// Get pointer to instance of OilerMotorClass
+/// </summary>
+/// <param name="uiMotorIndex">zero based index of oiler motor class instance</param>
+/// <returns>pointer to OilerMotorClass</returns>
+OilerMotorClass* OilerClass::GetOilerMotor ( uint8_t uiMotorIndex )
+{
+	return m_Motors.MotorInfo[ uiMotorIndex ].Motor;
+}
+
 /// <summary>
 /// Checks if an Alert state has been reached, if true then sets that state and sets the alert pin if configured
 /// </summary>
 /// <param name="ulActual">Current value of restart unit count (e.g. seconds, revs )</param>
-/// <param name="ulTarget">threshold after which Alert state should be set</param>
-void	OilerClass::CheckError ( uint32_t ulActual, uint32_t ulTarget )
+void	OilerClass::CheckError ( uint16_t uiActual )
 {
-	if ( m_ulAlertMultiple > 0 )
+	if ( m_uiAlertThreshold > 0 )
 	{
-		if ( ulActual >= ulTarget * m_ulAlertMultiple )
+		if ( uiActual >= m_uiAlertThreshold )
 		{
-			if ( m_uiAlertPin != NOT_A_PIN )
-			{
-				digitalWrite ( m_uiAlertPin, m_uiALertOnValue );
-			}
-			m_bAlert = true;
+			SetError ();
 		}
 	}
 }
+
+/// <summary>
+/// Set the alert error state and pin if configured
+/// </summary>
+void OilerClass::SetError ()
+{
+	if ( m_uiAlertPin != NOT_A_PIN )
+	{
+		digitalWrite ( m_uiAlertPin, m_uiALertOnValue );
+	}
+	m_bAlert = true;
+}
+
 /// <summary>
 /// Resets the Alert state and clears the alert pin if configured
 /// </summary>
@@ -555,10 +540,10 @@ void	OilerClass::ClearError ( void )
 /// <returns>Count of units</returns>
 uint16_t OilerClass::GetMotorWorkCount ( uint8_t uiMotorNum )
 {
-	uint8_t uiResult = 0;
+	uint16_t uiResult = 0;
 	if ( uiMotorNum < m_Motors.uiNumMotors )
 	{
-		uiResult = m_Motors.MotorInfo [ uiMotorNum ].uiWorkCount;
+		uiResult = m_Motors.MotorInfo [ uiMotorNum ].Motor->GetWorkUnits();
 	}
 	return uiResult;
 }
@@ -569,19 +554,19 @@ uint16_t OilerClass::GetMotorWorkCount ( uint8_t uiMotorNum )
 /// <returns>true if RUNNING, else false</returns>
 bool OilerClass::IsMotorRunning ( uint8_t uiMotorNum )
 {
-	return  GetMotorState (  uiMotorNum ) == MotorClass::RUNNING;
+	return  GetMotorState (  uiMotorNum ) == OilerMotorClass::MOVING;
 }
 /// <summary>
 /// Checks state of identified motor
 /// </summary>
 /// <param name="uiMotorNum">zero based index of motor to be checked</param>
 /// <returns>MotorClass:eState of motor, returns MotorClass:STOPPED if invalid index</returns>
-MotorClass::eState OilerClass::GetMotorState ( uint8_t uiMotorNum )
+OilerMotorClass::eOilerMotorState OilerClass::GetMotorState ( uint8_t uiMotorNum )
 {
-	MotorClass::eState eResult = MotorClass::STOPPED;
+	OilerMotorClass::eOilerMotorState eResult = OilerMotorClass::OFF;
 	if ( uiMotorNum < m_Motors.uiNumMotors )
 	{
-		eResult = m_Motors.MotorInfo [ uiMotorNum ].Motor->GetMotorState ();
+		eResult = m_Motors.MotorInfo [ uiMotorNum ].Motor->GetOilerMotorState ();
 	}
 	return eResult;
 }
@@ -595,7 +580,7 @@ bool OilerClass::AllMotorsStopped ( void )
 	bool bResult = true;
 	for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 	{
-		if ( m_Motors.MotorInfo [ i ].Motor->GetMotorState () == MotorClass::RUNNING )
+		if ( m_Motors.MotorInfo [ i ].Motor->IsMoving() )
 		{
 			bResult = false;
 			break;
@@ -613,13 +598,22 @@ bool OilerClass::AllMotorsStopped ( void )
 /// </param>
 /// <param name="ulModeTarget">target value in seconds or unit count as relevant</param>
 /// <returns>false if AddMachine() not previously called and Mode is ON_POWERED_TIME or ON_TARGET_ACTIVITY, else true</returns>
-bool OilerClass::SetStartMode ( eStartMode Mode, uint32_t ulModeTarget )
+bool OilerClass::SetStartMode ( eStartMode Mode, uint16_t uiModeTarget )
 {
 	bool bResult = false;
 	switch ( Mode )
 	{
 		case ON_TIME:
-			m_ulOilTime = ulModeTarget;
+			for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
+			{
+				m_Motors.MotorInfo [ i ].Motor->SetTimeThreshold ( uiModeTarget );
+			}
+			// ensure alert threshold exceed start threshold
+			if ( uiModeTarget >= m_uiAlertThreshold )
+			{
+				m_uiAlertThreshold = uiModeTarget + 1;
+			}
+			m_uiOilTime = uiModeTarget;
 			m_OilerMode = Mode;
 			bResult = true;
 			break;
@@ -627,10 +621,15 @@ bool OilerClass::SetStartMode ( eStartMode Mode, uint32_t ulModeTarget )
 		case ON_POWERED_TIME:
 			if ( m_pMachine != NULL )
 			{
-				if ( m_pMachine->SetActiveTimeTarget ( ulModeTarget ) )
+				if ( m_pMachine->SetActiveTimeTarget ( uiModeTarget ) )
 				{
-					m_ulOilTime = ulModeTarget;
+					m_uiOilTime = uiModeTarget;
 					m_OilerMode = Mode;
+					// ensure alert threshold exceed start threshold
+					if ( uiModeTarget >= m_uiAlertThreshold )
+					{
+						m_uiAlertThreshold = uiModeTarget + 1;
+					}
 					bResult = true;
 				}
 			}
@@ -639,10 +638,15 @@ bool OilerClass::SetStartMode ( eStartMode Mode, uint32_t ulModeTarget )
 		case ON_TARGET_ACTIVITY:
 			if ( m_pMachine != NULL )
 			{
-				if ( m_pMachine->SetWorkTarget ( ulModeTarget ) )
+				if ( m_pMachine->SetWorkTarget ( uiModeTarget ) )
 				{
-					m_ulWorkTarget = ulModeTarget;
+					m_uiWorkTarget = uiModeTarget;
 					m_OilerMode = Mode;
+					// ensure alert threshold exceed start threshold
+					if ( uiModeTarget >= m_uiAlertThreshold )
+					{
+						m_uiAlertThreshold = uiModeTarget + 1;
+					}
 					bResult = true;
 				}
 			}
@@ -673,25 +677,48 @@ bool OilerClass::SetMotorSensorDebounce ( uint8_t uiMotorIndex, uint16_t uiDelay
 	bool bResult = false;
 	if ( uiMotorIndex < m_Motors.uiNumMotors )
 	{
-		m_Motors.MotorInfo [ uiMotorIndex ].uiWorkDebounce = uiDelayms;
+		m_Motors.MotorInfo [ uiMotorIndex ].Motor->SetDebouncems ( uiDelayms );
 		bResult = true;
 	}
 	return bResult;
 }
 
-bool OilerClass::SetStartEventToTargetActiveTime ( uint32_t ulTargetSecs )
+bool OilerClass::SetStartEventToTargetActiveTime ( uint16_t uiTargetSecs )
 {
-	return SetStartMode ( ON_POWERED_TIME, ulTargetSecs );
+	return SetStartMode ( ON_POWERED_TIME, uiTargetSecs );
 }
 
-bool OilerClass::SetStartEventToTargetWork ( uint32_t ulTargetUnits )
+bool OilerClass::SetStartEventToTargetWork ( uint16_t uiTargetUnits )
 {
-	return SetStartMode ( ON_TARGET_ACTIVITY, ulTargetUnits );
+	return SetStartMode ( ON_TARGET_ACTIVITY, uiTargetUnits );
 }
 
-bool OilerClass::SetStartEventToTime ( uint32_t ulElapsedSecs )
+bool OilerClass::SetStartEventToTime ( uint16_t uiElapsedSecs )
 {
-	return SetStartMode ( ON_TIME, ulElapsedSecs );
+	return SetStartMode ( ON_TIME, uiElapsedSecs );
+}
+
+bool OilerClass::SetStopTarget ( uint8_t uiWorkTarget, uint8_t uiMotorIndex )
+{
+	bool bResult = false;
+	
+	if ( uiWorkTarget > 0 )
+	{
+		if ( uiMotorIndex == MAX_MOTORS )
+		{
+			// do all
+			for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
+			{
+				m_Motors.MotorInfo [ i ].Motor->SetWorkThreshold ( uiWorkTarget );
+			}
+		}
+		else
+		{
+			m_Motors.MotorInfo [ uiMotorIndex ].Motor->SetWorkThreshold ( uiWorkTarget );
+		}
+		bResult = true;
+	}
+	return bResult;
 }
 
 bool OilerClass::SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode )
