@@ -13,19 +13,20 @@
 #else
 #include "WProgram.h"
 #endif
-#include "Motor.h"
+#include "OilerMotor.h"
 
-class RelayMotorClass : MotorClass
+class RelayMotorClass : public OilerMotorClass
 {
 public:
-	RelayMotorClass ( uint8_t uiPin );
-	bool				On ( void );
-	bool				Off ( void );
+						RelayMotorClass ( uint8_t uiPin, uint8_t uiWorkPin, uint32_t ulWorkThreshold, uint32_t ulDebouncems, uint32_t ulTimeThreshold );
+	void				Idle ();
+	void				Start ();
+	void				PowerOff ();
+
 	void				SetDirection ( eDirection Direction );		// Does nothing for this type of motor
-	MotorClass::eState	GetMotorState ( void );
 
 protected:
-	uint8_t		m_uiPin;
+	uint8_t		m_uiRelayPin;										// Pin that controls relay switch
 };
 
 #endif

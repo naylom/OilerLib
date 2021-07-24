@@ -55,6 +55,9 @@ public:
 	bool			SetWorkPinMode ( uint8_t uiMode );			// set Work input pin to INPUT or INPUT_PULLUP
 	bool			SetActiveState ( uint8_t uiState );			// set if HIGH or LOW indicates machine has power
 	void			CheckActivity ( void );						// check activity after change in signal from machine
+	bool			IsTimeAlert ( uint16_t uiAlertThreshold );	// check if exceeded alert threshold when in powered time mode
+	bool			IsWorkAlert ( uint16_t uiAlertThreshold );	// check if exceeded alert threshold when in work unit mode
+
 protected:
 	eMachineState	m_State;
 	eActiveState	m_Active;

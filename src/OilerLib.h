@@ -35,7 +35,7 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				1.4
+#define		OILER_VERSION				1.5
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
@@ -61,8 +61,8 @@ public:
 
 	void				AddMachine ( TargetMachineClass* pMachine );				// optionally called to inform oiler we have a target machine that can be queried
 	bool				AddMotor ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// FourPin Stepper version
-	bool				AddMotor ( uint8_t uiPin, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// 1 pin relay version
-	void				SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertMultiple );	// Set the pin to be signalled when oiling is delayed.
+	bool				AddMotor ( uint8_t uiRelayPin, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// 1 pin relay version
+	void				SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertThreshold );	// Set the pin to be signalled when oiling is delayed.
 	bool				SetAlertLevel ( uint8_t uiLevel );							// Set level of alert pin when in Alert State
 	void				SetMotorsBackward ( void );									// Set direction of all motors
 	void				SetMotorsBackward ( uint8_t uiMotorIndex );					// set direction of specified motor
@@ -70,9 +70,10 @@ public:
 	void				SetMotorsForward ( uint8_t uiMotorIndex );					// Set direction of specified motor
 	bool				SetMotorSensorDebounce ( uint8_t uiMotorIndex, uint16_t uiDelayms );	// Set debounce delay of specified motor
 	bool				SetMotorWorkPinMode ( uint8_t uiMotorIndex, uint8_t uiMode );	// set mode to INPUT or INPUT_PULLUP for input sensor of specified motor
-	bool				SetStartEventToTargetActiveTime ( uint32_t ulTargetSecs );	// set time target machine (eg lathe) has power to be event that causes motors to restart oiling
-	bool				SetStartEventToTargetWork ( uint32_t ulTargetUnits );		// set amount of work done by target machine ( eg lathe) to be event that causes motors to restart oiling
-	bool				SetStartEventToTime ( uint32_t ulElapsedSecs );				// set elapsed time to be event that causes motors to restart oiling
+	bool				SetStartEventToTargetActiveTime ( uint16_t ulTargetSecs );	// set time target machine (eg lathe) has power to be event that causes motors to restart oiling
+	bool				SetStartEventToTargetWork ( uint16_t ulTargetUnits );		// set amount of work done by target machine ( eg lathe) to be event that causes motors to restart oiling
+	bool				SetStartEventToTime ( uint16_t ulElapsedSecs );				// set elapsed time to be event that causes motors to restart oiling
+	bool				SetStopTarget ( uint8_t uiWorkTarget, uint8_t uiMotorIndex = MAX_MOTORS );	// change the number of work units (drips) needed before motor stops, if motor not specified, apply to all motors
 	// Queries
 	bool				AllMotorsStopped ( void );									// true if no motors active
 	bool				IsIdle ();													// true if all motors are paused waiting for event to start again
@@ -90,43 +91,45 @@ public:
 
 
 /*---------------------- INTERNAL USE - DO NOT USE -----------------------------------*/
-	bool				MotorWork ( uint32_t ulLastSignalTime, uint8_t uiMotorIndex );	// Used internally by interrupt handler to capture signal from a motor sensor when output (oil) is seen
+
 	void				CheckTargetReady ( void );									// Checks if target is ready for oil
 	void				CheckElapsedTime ( void );									// Checks time running since oiler last finished - this is the basic version not using TargetMachine
+	OilerMotorClass*	GetOilerMotor ( uint8_t uiMotorIndex );						// Gets the instance of the specified motor
+	void				CheckMotors ();												// Used internally by interrupt handler to check if all motors are now off or idle
+	void				MotorWork ( uint8_t uiMotorIndex );							// Used internally to process a unit of work
 
 protected:
 	enum eStartMode { ON_TIME = 0, ON_POWERED_TIME, ON_TARGET_ACTIVITY, NONE };
 	enum eStatus { OILING = 0, OFF, IDLE };											// IDLE => waiting for start event
 
-	void				CheckError ( uint32_t Actual, uint32_t Target );
+	void				CheckError ( uint16_t uiActual );
 	void				ClearError ( void );
 	void				SetupMotorPins ( uint8_t uiWorkPin, uint8_t uiWorkTarget );
-	MotorClass::eState	GetMotorState ( uint8_t uiMotorNum );						// get state of specified motor
+	OilerMotorClass::eOilerMotorState	GetMotorState ( uint8_t uiMotorNum );						// get state of specified motor
 	eStartMode			GetStartMode ( void );
 	eStatus				GetStatus ( void );
-	bool				SetStartMode ( eStartMode Mode, uint32_t uiModeTarget );
+	void				SetError ();
+	bool				SetStartMode ( eStartMode Mode, uint16_t uiModeTarget );
 
 	eStartMode			m_OilerMode;
 	eStatus				m_OilerStatus;
 	TargetMachineClass* m_pMachine;
 	uint32_t			m_timeOilerStopped;
 	uint8_t				m_uiAlertPin;												// pin to signal if Alert to be generated
-	uint16_t			m_ulAlertMultiple;											// Multiple of metric used to restart Oiler if motors are running in excess of AlertMultiple * metric
+	uint16_t			m_uiAlertThreshold;											// Value of metric used to restart Oiler if motors are running in excess of AlertThreshold
 	uint8_t				m_uiALertOnValue;											// value to set pin when alert is on
 	bool				m_bAlert;													// true when in alert state
 
 	union																			// These values are mutually exclsuive so use same storage
 	{
-		uint32_t m_ulOilTime;
-		uint32_t m_ulWorkTarget;
+		uint16_t m_uiOilTime;
+		uint16_t m_uiWorkTarget;
 	};
+
 	typedef struct
 	{
 		uint8_t					uiWorkPin;											// Pin that signals when motor has completed a unit of work e.g. a drip of oil
-		MotorClass*				Motor;												// ptr to type of motor class
-		uint16_t				uiWorkCount;										// Number of work units (oil drips) seen
-		uint8_t					uiWorkTarget;										// Target number of work units (oil drips) from motor after which it is stopped
-		uint16_t				uiWorkDebounce;										// ms that must pass before a new signal on uiWorkPin is recognise as real
+		OilerMotorClass*		Motor;												// ptr to type of oiler motor class
 	} MOTOR_INFO;
 	struct																			
 	{

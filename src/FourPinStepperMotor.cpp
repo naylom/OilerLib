@@ -24,7 +24,7 @@ uint8_t  PhaseSigs [ NUM_PHASES ][ NUM_PINS ] =
 
 
 // List of 4 pin stepper motor instances used by timer callback interrupt routine
-MOTOR_INSTANCES MotorInstances = { 0, {0,0} };
+MOTOR_INSTANCES MotorInstances = { 0, {0,0,0,0,0,0} };
 
 // The following function is called by the timer and is used to check if any 4 pin stepper motors need signals output to move to the next step
 void MotorCallback ( void )
@@ -35,7 +35,7 @@ void MotorCallback ( void )
     }
 }
 
-FourPinStepperMotorClass::FourPinStepperMotorClass ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed ) : MotorClass ( ulSpeed )
+FourPinStepperMotorClass::FourPinStepperMotorClass ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint8_t uiWorkPin, uint32_t ulWorkThreshold, uint32_t ulDebouncems, uint32_t ulSpeed, uint16_t ulTimeThreshold ) : OilerMotorClass ( uiWorkPin, ulWorkThreshold, ulDebouncems, ulSpeed, ulTimeThreshold )
 {
     m_uiPins [ 0 ] = uiPin1;
     m_uiPins [ 1 ] = uiPin2;
@@ -53,23 +53,51 @@ FourPinStepperMotorClass::FourPinStepperMotorClass ( uint8_t uiPin1, uint8_t uiP
     }
 }
 
+/// <summary>
+/// Motor specific function to idle motor
+/// </summary>
+void FourPinStepperMotorClass::Idle ()
+{
+    // Idle motor, same as power off
+    // PowerOff (); - not sure this is necessary, if state is not moving we won't change stepper pins so motor is then effectively idle
+}
+
+/// <summary>
+/// Motor specific function to Start motor
+/// </summary>
+void FourPinStepperMotorClass::Start ()
+{
+    // Start motor - for relay this means switch on
+    On ();
+}
+
+/// <summary>
+/// Motor specific function to power off
+/// </summary>
+void FourPinStepperMotorClass::PowerOff ()
+{
+    // power off motor - for 4 pin stepper this means drive all signals LOW
+    Off ();
+}
+
 void FourPinStepperMotorClass::SetDirection ( eDirection Direction )
 {
     MotorClass::SetDirection ( Direction );
 }
 
+/// <summary>
+/// Turn stepper motor on. energise pins and ensure timer is set up to make next step
+/// </summary>
+/// <param name="">none</param>
+/// <returns>true if new timer callback created</returns>
 bool FourPinStepperMotorClass::On ( void )
 {
     // Set up callback to increment motor steps
     bool bResult = false;
-    if ( m_eState == STOPPED )
+    if ( !IsMoving() )
     {
-        bResult = true;
-
         PowerUp ();
-
-        m_eState = MOVING;
-        MotorClass::On ();
+        OilerMotorClass::On ();
 
         bResult = TheTimer.AddCallBack ( MotorCallback, ( m_ulStepInterval / ( 1000000 / RESOLUTION ) + 1 ) );
     }
@@ -78,21 +106,14 @@ bool FourPinStepperMotorClass::On ( void )
 
 bool FourPinStepperMotorClass::Off ( void )
 {
-    bool bResult = false;
-
     for ( uint8_t uiPin = 0; uiPin < NUM_PINS; uiPin++ )
     {
         digitalWrite ( m_uiPins [ uiPin ], LOW );
     }
     m_ulLastStepTime = micros ();
     m_eState = STOPPED;
-    MotorClass::Off ();
-    return bResult;
-}
-
-MotorClass::eState FourPinStepperMotorClass::GetMotorState ( void )
-{
-    return MotorClass::GetMotorState ();
+    
+    return OilerMotorClass::Off (); 
 }
 
 // decrements phase and resets to NUM_PHASES - 1 when at 0
@@ -132,7 +153,7 @@ uint32_t FourPinStepperMotorClass::GetNextStepTime ( void )
 // send signals for next step if time has elapsed
 void FourPinStepperMotorClass::NextStep ( void )
 {
-    if ( m_eState != STOPPED )
+    if ( IsMoving() )
     {
         if ( micros () > GetNextStepTime () )
         {
