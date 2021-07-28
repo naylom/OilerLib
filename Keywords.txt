@@ -42,6 +42,7 @@ MachinePoweredTimeExpired	KEYWORD2
 SetActiveTimeTarget	KEYWORD2
 SetWorkTarget	KEYWORD2
 SetActivePinMode	KEYWORD2
+SetActiveState	KEYWORD2
 SetWorkPinMode	KEYWORD2
 IsReady	KEYWORD2
 GetActiveTime	KEYWORD2
