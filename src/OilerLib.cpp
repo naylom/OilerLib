@@ -406,7 +406,7 @@ void OilerClass::CheckTargetReady ( void )
 			if ( IsOiling () )
 			{
 				// still oiling so check we haven't exceeded the alert threshold
-				if ( m_pMachine->IsTimeAlert ( m_uiOilTime ) )
+				if ( m_pMachine->IsTimeAlert ( m_uiAlertThreshold ) )
 				{
 					SetError ();
 				}

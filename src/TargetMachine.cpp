@@ -16,9 +16,6 @@
 #include "PCIHandler.h"
 #include "TargetMachine.h"
 
-
-// #define IsInThisPCIR( digitalPin, Port ) ( digitalPinToPort ( digitalPin ) -  2 == Port ? true: false)
-
 /// <summary>
 /// Routine to be called if the target machine active (has power) pin is signalled - called by interrupt
 /// </summary>
@@ -118,12 +115,12 @@ void TargetMachineClass::CheckActivity ( void )
 	if ( digitalRead ( m_uiActivePin ) == m_uiActiveState )
 	{
 		// machine gone active so remember when this started
-		TheMachine.GoneActive ( millis () );
+		GoneActive ( millis () );
 	}
 	else
 	{
 		// machine gone idle so calc time was active and save it
-		TheMachine.IncActiveTime ( millis () );
+		IncActiveTime ( millis () );
 	}
 }
 
@@ -158,7 +155,7 @@ bool TargetMachineClass::MachinePoweredTimeExpired ( void )
 		IncActiveTime ( tNow );
 		m_timeActiveStarted = tNow;
 	}
-	if ( m_timeActive / 1000 >= m_ulTargetSecs )
+	if ( m_timeActive >= m_ulTargetSecs * 1000 )
 	{
 		bResult = true;
 	}
@@ -186,8 +183,8 @@ TargetMachineClass::eMachineState TargetMachineClass::IsReady ( void )
 /// <summary>
 /// Checks if TargetMachine has exceeded AlertThreshold in work units
 /// </summary>
-/// <param name="uiAlertThreshold">Value of alert threshold in seconds or units of work</param>
-/// <returns></returns>
+/// <param name="uiAlertThreshold">Value of alert threshold in units of work</param>
+/// <returns>true if exceeded threshold</returns>
 bool TargetMachineClass::IsWorkAlert ( uint16_t uiAlertThreshold )
 {
 	bool bResult = false;
@@ -201,15 +198,16 @@ bool TargetMachineClass::IsWorkAlert ( uint16_t uiAlertThreshold )
 }
 
 /// <summary>
-/// Checks if TargetMachine has exceeded AlertThreshold in work units
+/// Checks if TargetMachine has exceeded AlertThreshold in seconds
 /// </summary>
-/// <param name="uiAlertThreshold">Value of alert threshold in seconds or units of work</param>
-/// <returns></returns>
+/// <param name="uiAlertThreshold">Value of alert threshold in seconds</param>
+/// <returns>true if exceeded threshold</returns>
 bool TargetMachineClass::IsTimeAlert ( uint16_t uiAlertThreshold )
 {
 	bool bResult = false;
-
-	if ( m_timeActive >= uiAlertThreshold )
+	// Ensure time is updated before returning value
+	IsReady ();
+	if ( m_timeActive >= uiAlertThreshold * 1000 )
 	{
 		bResult = true;
 	}
@@ -224,6 +222,8 @@ bool TargetMachineClass::IsTimeAlert ( uint16_t uiAlertThreshold )
 /// <returns>number of seconds</returns>
 uint32_t TargetMachineClass::GetActiveTime ( void )
 {
+	// Ensure time is updated before returning value
+	IsReady ();
 	return m_timeActive / 1000;
 }
 
@@ -244,7 +244,7 @@ uint32_t TargetMachineClass::GetWorkUnits ( void )
 void TargetMachineClass::IncActiveTime ( uint32_t tNow )
 {
 	m_timeActive += ( tNow - m_timeActiveStarted );
-	if ( m_timeActive / 1000 >= m_ulTargetSecs )
+	if ( m_timeActive >= m_ulTargetSecs * 1000 )
 	{
 		m_State = READY;
 	}
@@ -358,7 +358,7 @@ bool TargetMachineClass::SetActiveState ( uint8_t uiState )
 	bool bResult = false;
 	if ( uiState == HIGH || uiState == LOW )
 	{
-		m_uiWorkPinMode = uiState;
+		m_uiActiveState = uiState;
 		bResult = true;
 	}
 	return bResult;
