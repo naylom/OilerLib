@@ -11,7 +11,7 @@ whilst the original purpose of this libabry is oiling the code has no real knowl
 
 Depending upon the programming skill of the library user there are different options to get going:
 
-<b>Limited programming experience:</b>
+Limited programming experience:
 
 Automated sketch builder
 
