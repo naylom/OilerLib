@@ -35,7 +35,7 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				1.5
+#define		OILER_VERSION				"1.5.4"
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
@@ -105,9 +105,11 @@ protected:
 	void				CheckError ( uint16_t uiActual );
 	void				ClearError ( void );
 	void				SetupMotorPins ( uint8_t uiWorkPin, uint8_t uiWorkTarget );
-	OilerMotorClass::eOilerMotorState	GetMotorState ( uint8_t uiMotorNum );						// get state of specified motor
+	OilerMotorClass::eOilerMotorState	GetMotorState ( uint8_t uiMotorNum );		// get state of specified motor
 	eStartMode			GetStartMode ( void );
 	eStatus				GetStatus ( void );
+	uint32_t			GetMachinePoweredOnTime ( void );
+	uint32_t			GetMachineUnitCount ( void );								// return machine work units so far
 	void				SetError ();
 	bool				SetStartMode ( eStartMode Mode, uint16_t uiModeTarget );
 

@@ -65,6 +65,10 @@ protected:
 	uint16_t	m_uiWorkCount;			// number of work units seen since last reset
 	uint32_t	m_ulLastWorkSignal;		// time of last signal in millis
 	uint16_t	m_uiTimeThresholdSec;	// time after which idle motor should restart
+	uint32_t	m_ulMachineUnitsAtStart;// number of machine units (eg revs) when motor last started
+	uint32_t	m_ulMachineUnitsAtIdle;	// number of machine units (eg revs) when motor last idled
+	uint32_t	m_ulMachinePowerTimeAtStart;// number of seconds of machine having power when motor last started
+	uint32_t	m_ulMachinePowerTimeAtIdle;	// number of seconds of machine having power when motor last idled
 	StateTable	m_MotorState;
 
 /*
@@ -105,18 +109,26 @@ private:
 
 public:
 	OilerMotorClass ( uint8_t uiWorkPin, uint32_t ulThreshold, uint32_t ulDebouncems, uint32_t ulSpeed, uint16_t ulTimeThreshold );
-	virtual bool On ( void );
-	virtual bool Off ( void );
-	void IncWorkUnits ( uint16_t uiNewUnits = 1 );
-	void ResetWorkUnits ( void );
-	void SetDebouncems ( uint32_t ulDebouncems );
-	void SetWorkThreshold ( uint32_t ulWorkThreshold );
-	void SetTimeThreshold ( uint16_t uiTimeThresholdSec );
-	bool Action ( eOilerMotorEvents eAction );
-	uint16_t GetWorkUnits ();
+	virtual		bool On ( void );
+	virtual		bool Off ( void );
+	uint32_t	GetMachineUnitsAtStart ( void );
+	uint32_t	GetMachineUnitsAtIdle ( void );
+	uint32_t	GetMachinePowerTimeAtStart ( void );
+	uint32_t	GetMachinePowerTimeAtIdle ( void );
+	void		IncWorkUnits ( uint16_t uiNewUnits = 1 );
+	void		ResetWorkUnits ( void );
+	void		SetDebouncems ( uint32_t ulDebouncems );
+	void		SetWorkThreshold ( uint32_t ulWorkThreshold );
+	void		SetTimeThreshold ( uint16_t uiTimeThresholdSec );
+	void		SetMachineUnitsAtStart ( uint32_t ulMachineUnitsAtStart );
+	void		SetMachineUnitsAtIdle ( uint32_t ulMachineUnitsAtIdle );
+	void		SetMachinePowerTimeAtStart ( uint32_t ulMachinePowerTimeAtStart );
+	void		SetMachinePowerTimeAtIdle ( uint32_t ulMachinePowerTimeAtIdle );
+	bool		Action ( eOilerMotorEvents eAction );
+	uint16_t	GetWorkUnits ();
 	eOilerMotorState GetOilerMotorState ();
-	bool IsIdle ();
-	bool IsMoving ();
-	bool IsOff ();
+	bool		IsIdle ();
+	bool		IsMoving ();
+	bool		IsOff ();
 };
 #endif

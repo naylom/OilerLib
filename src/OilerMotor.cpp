@@ -11,6 +11,10 @@ OilerMotorClass::OilerMotorClass ( uint8_t uiWorkPin, uint32_t ulThreshold, uint
 {
 	m_uiWorkPin = uiWorkPin;
 	m_ulLastWorkSignal = 0UL;
+	m_ulMachineUnitsAtStart = 0UL;
+	m_ulMachineUnitsAtIdle = 0UL;
+	m_ulMachinePowerTimeAtStart = 0UL;
+	m_ulMachinePowerTimeAtIdle = 0UL;
 	SetWorkThreshold ( ulThreshold );
 	SetDebouncems ( ulDebouncems );
 	SetTimeThreshold ( uiTimeThreshold );
@@ -55,6 +59,46 @@ void OilerMotorClass::SetWorkThreshold ( uint32_t ulWorkThreshold )
 void OilerMotorClass::SetTimeThreshold ( uint16_t uiTimeThresholdSec )
 {
 	m_uiTimeThresholdSec = uiTimeThresholdSec;
+}
+
+void OilerMotorClass::SetMachineUnitsAtStart ( uint32_t ulMachineUnitsAtStart )
+{
+	m_ulMachineUnitsAtStart = ulMachineUnitsAtStart;
+}
+
+void OilerMotorClass::SetMachineUnitsAtIdle ( uint32_t ulMachineUnitsAtIdle )
+{
+	m_ulMachineUnitsAtIdle = ulMachineUnitsAtIdle;
+}
+
+void OilerMotorClass::SetMachinePowerTimeAtStart ( uint32_t ulMachinePowerTimeAtStart )
+{
+	m_ulMachinePowerTimeAtStart = ulMachinePowerTimeAtStart;
+}
+
+void OilerMotorClass::SetMachinePowerTimeAtIdle ( uint32_t ulMachinePowerTimeAtIdle )
+{
+	m_ulMachinePowerTimeAtIdle = ulMachinePowerTimeAtIdle;
+}
+
+uint32_t OilerMotorClass::GetMachineUnitsAtStart ( void )
+{
+	return m_ulMachineUnitsAtStart;
+}
+
+uint32_t OilerMotorClass::GetMachineUnitsAtIdle ( void )
+{
+	return m_ulMachineUnitsAtIdle;
+}
+
+uint32_t OilerMotorClass::GetMachinePowerTimeAtStart ( void )
+{
+	return m_ulMachinePowerTimeAtStart;
+}
+
+uint32_t OilerMotorClass::GetMachinePowerTimeAtIdle ( void )
+{
+	return m_ulMachinePowerTimeAtIdle;
 }
 
 bool OilerMotorClass::Action ( eOilerMotorEvents eAction )
@@ -135,9 +179,9 @@ uint16_t OilerMotorClass::CheckWork ()
 		IncWorkUnits ( 1 );
 		if ( m_uiWorkCount >= m_ulWorkThreshold )
 		{
-			uiResult = IDLE;	// new state
-			Idle ();			// Physically idle motor
-			OilerMotorClass::Off ();				// update class, don't invoke
+			uiResult = IDLE;			// new state
+			Idle ();					// Physically idle motor
+			OilerMotorClass::Off ();	// update class, don't invoke
 		}
 		else
 		{
@@ -160,7 +204,8 @@ uint16_t OilerMotorClass::CheckWork ()
 uint16_t OilerMotorClass::CheckTime ()
 {
 	uint16_t uiResult;
-	if ( ( millis() - MotorClass::GetTimeMotorStopped () ) / 1000 >= m_uiTimeThresholdSec )
+	//if ( ( millis() - MotorClass::GetTimeMotorStopped () ) / 1000 >= m_uiTimeThresholdSec )
+	if ( ( millis () - MotorClass::GetTimeMotorStarted () ) / 1000 >= m_uiTimeThresholdSec )		// use time started so a slow motor restarts from start time not when it finished dripping oil
 	{
 		// time to start motor
 		uiResult = TurnOn ();

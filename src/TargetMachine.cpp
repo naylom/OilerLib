@@ -92,8 +92,8 @@ bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin, u
 /// <param name="">none</param>
 void TargetMachineClass::RestartMonitoring ( void )
 {
-	m_timeActive = 0;
-	m_ulWorkUnitCount = 0;
+	m_timeActive = 0UL;
+	m_ulWorkUnitCount = 0UL;
 	if ( m_State != NO_FEATURES )
 	{
 		m_State = NOT_READY;
@@ -235,6 +235,26 @@ uint32_t TargetMachineClass::GetActiveTime ( void )
 uint32_t TargetMachineClass::GetWorkUnits ( void )
 {
 	return m_ulWorkUnitCount;
+}
+
+/// <summary>
+/// Returns the number of seconds the machince should have power before the motors should start oiling
+/// </summary>
+/// <param name="">None</param>
+/// <returns>target number of seconds</returns>
+uint32_t TargetMachineClass::GetActiveTimeTarget ( void )
+{
+	return m_ulTargetSecs;
+}
+
+/// <summary>
+/// return the target number of work units (eg revs) the machine should accomplish after which it should be oiled
+/// </summary>
+/// <param name="">None</param>
+/// <returns>target number of units</returns>
+uint32_t TargetMachineClass::GetWorkUnitTarget ( void )
+{
+	return m_ulTargetUnits;
 }
 
 /// <summary>

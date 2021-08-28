@@ -14,7 +14,6 @@
 void Motor1WorkSignal ( void )
 {
 	TheOiler.MotorWork ( 0 );
-
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 2 has produced a unit of work
@@ -22,8 +21,7 @@ void Motor1WorkSignal ( void )
 /// <param name="">none</param>
 void Motor2WorkSignal ( void )
 {
-	//TheOiler.MotorWork ( 1 );
-	TheOiler.GetOilerMotor ( 1 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
+	TheOiler.MotorWork ( 1 );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 3 has produced a unit of work
@@ -31,8 +29,7 @@ void Motor2WorkSignal ( void )
 /// <param name="">none</param>
 void Motor3WorkSignal ( void )
 {
-	//TheOiler.MotorWork ( 2 );
-	TheOiler.GetOilerMotor ( 2 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
+	TheOiler.MotorWork ( 2 );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 4 has produced a unit of work
@@ -40,8 +37,7 @@ void Motor3WorkSignal ( void )
 /// <param name="">none</param>
 void Motor4WorkSignal ( void )
 {
-	//TheOiler.MotorWork ( 3 );
-	TheOiler.GetOilerMotor ( 3 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
+	TheOiler.MotorWork ( 3 );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 5 has produced a unit of work
@@ -49,8 +45,7 @@ void Motor4WorkSignal ( void )
 /// <param name="">none</param>
 void Motor5WorkSignal ( void )
 {
-	//TheOiler.MotorWork ( 4 );
-	TheOiler.GetOilerMotor ( 4 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
+	TheOiler.MotorWork ( 4 );
 }
 /// <summary>
 /// Called by interrupt routine handling signal from pin indicating motor 6 has produced a unit of work
@@ -58,8 +53,7 @@ void Motor5WorkSignal ( void )
 /// <param name="">none</param>
 void Motor6WorkSignal ( void )
 {
-	//TheOiler.MotorWork ( 5 );
-	TheOiler.GetOilerMotor ( 5 )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN );
+	TheOiler.MotorWork ( 5 );
 }
 // list of ISRs for each motor upto max allowed
 typedef void ( *Callback )( void );
@@ -81,7 +75,6 @@ struct
 /// <param name=""></param>
 void OilerTimerCallback ( void )
 {
-	TheOiler.CheckMotors ();
 	if ( TheOiler.IsOff () == false )
 	{
 		// Invoked once per second to check if oiler needs starting
@@ -121,15 +114,23 @@ bool OilerClass::On ()
 	bool bResult = false;
 	if ( m_Motors.uiNumMotors > 0 )
 	{
+		uint32_t ulMachineUnitCount = GetMachineUnitCount ();
+		uint32_t ulMachinePowerTimeCount = GetMachinePoweredOnTime ();
 		for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 		{
-			m_Motors.MotorInfo [ i ].Motor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_ON );
+			OilerMotorClass* pMotor = GetOilerMotor ( i );
+			if ( !pMotor->IsMoving() )
+			{
+				pMotor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_ON );
+				pMotor->SetMachineUnitsAtStart ( ulMachineUnitCount );
+				pMotor->SetMachinePowerTimeAtStart ( ulMachinePowerTimeCount );
+			}
 		}
 		// if we have a machine, start monitoring
-		if ( m_OilerMode != ON_TIME && m_pMachine != NULL )
-		{
-			m_pMachine->RestartMonitoring ();
-		}
+		//if ( m_OilerMode != ON_TIME && m_pMachine != NULL )
+		//{
+		//	m_pMachine->RestartMonitoring ();
+		//}
 
 		TheTimer.AddCallBack ( OilerTimerCallback, RESOLUTION );		// callback once per sec
 		m_OilerStatus = OILING;
@@ -144,8 +145,18 @@ bool OilerClass::On ()
 /// <param name="uiMotorIndex"></param>
 void OilerClass::MotorWork ( uint8_t uiMotorIndex )
 {
-	if ( TheOiler.GetOilerMotor ( uiMotorIndex )->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN ) )
+	OilerMotorClass* pMotor = GetOilerMotor ( uiMotorIndex );
+	if ( pMotor->Action ( OilerMotorClass::eOilerMotorEvents::WORK_SEEN ) )
 	{
+		// get here if state changed
+		if ( pMotor->IsIdle () )
+		{
+			uint32_t ulMachineUnitCount = GetMachineUnitCount ();
+			uint32_t ulMachinePowerTimeCount = GetMachinePoweredOnTime ();
+			pMotor->SetMachineUnitsAtIdle ( ulMachineUnitCount );
+			pMotor->SetMachinePowerTimeAtIdle ( ulMachinePowerTimeCount );
+		}
+		// check if all motors now idle
 		TheOiler.CheckMotors ();
 	}
 }
@@ -155,9 +166,14 @@ void OilerClass::MotorWork ( uint8_t uiMotorIndex )
 /// </summary>
 void OilerClass::Off ()
 {
+	uint32_t ulMachineUnitCount = GetMachineUnitCount ();
+	uint32_t ulMachinePowerTimeCount = GetMachinePoweredOnTime ();
 	for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 	{
-		m_Motors.MotorInfo [ i ].Motor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_OFF );
+		OilerMotorClass* pMotor = GetOilerMotor ( i );
+		pMotor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_OFF );
+		pMotor->SetMachineUnitsAtIdle ( ulMachineUnitCount );
+		pMotor->SetMachinePowerTimeAtIdle ( ulMachinePowerTimeCount );
 	}
 	m_OilerStatus = OFF;
 	m_timeOilerStopped = millis ();
@@ -344,7 +360,7 @@ void OilerClass::CheckMotors ()
 			// restart monitoring, if we have a machine
 			if ( m_pMachine != NULL && m_OilerMode != ON_TIME )
 			{
-				m_pMachine->RestartMonitoring ();
+				//m_pMachine->RestartMonitoring ();
 				m_timeOilerStopped = millis ();
 			}
 			// reset start time count
@@ -374,6 +390,40 @@ OilerClass::eStatus OilerClass::GetStatus ( void )
 {
 	return m_OilerStatus;
 }
+
+/// <summary>
+/// Gets the number of seconds the coinfigured machine has had power to date
+/// </summary>
+/// <param name="">None</param>
+/// <returns>returns 0 if no machine configured else the number of seconds of powered time</returns>
+uint32_t OilerClass::GetMachinePoweredOnTime ( void )
+{
+	uint32_t ulResult = 0UL;
+
+	if ( m_pMachine )
+	{
+		ulResult = m_pMachine->GetActiveTime ();
+	}
+	return ulResult;
+}
+
+/// <summary>
+/// Returns the number of machine units done to date or 0 if no machine is configured
+/// </summary>
+/// <param name="">None</param>
+/// <returns>number of work units done or 0 if no machine configured</returns>
+uint32_t OilerClass::GetMachineUnitCount ( void )
+{
+	uint32_t ulResult = 0UL;
+
+	if ( m_pMachine )
+	{
+		ulResult = m_pMachine->GetWorkUnits ();
+	}
+
+	return ulResult;
+}
+
 /// <summary>
 /// checks if the machine being oiled has met its oiling restart threshold and restarts oiling if required. Also checks if alert should be generated.
 /// </summary>
@@ -383,47 +433,65 @@ void OilerClass::CheckTargetReady ( void )
 	switch ( m_OilerMode )
 	{
 		case ON_TARGET_ACTIVITY:
-			if ( IsOiling() )
+		{
+			uint32_t ulUnitsNow = TheMachine.GetWorkUnits ();
+			for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 			{
-				// still oiling so check we haven't exceeded the alert threshold
-				if ( m_pMachine->IsWorkAlert ( m_uiWorkTarget ) )
+				OilerMotorClass* pMotor = GetOilerMotor ( i );
+				if ( pMotor->IsMoving () )
 				{
-					SetError ();
+					if ( ulUnitsNow - pMotor->GetMachineUnitsAtStart () >= m_uiAlertThreshold )
+					{
+						// motor has been running longer than alert threshold
+						SetError ();
+					}
+				}
+				else if ( pMotor->IsIdle () )
+				{
+					if ( ulUnitsNow - pMotor->GetMachineUnitsAtStart () >= m_pMachine->GetWorkUnitTarget () )	// comparing against last start in case oiling is slow and we need to restart asap
+					{
+						// need to restart
+						pMotor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_ON );
+						pMotor->SetMachineUnitsAtStart ( ulUnitsNow );
+						pMotor->SetMachinePowerTimeAtStart ( m_pMachine->GetActiveTime () );
+						m_OilerStatus = OILING;
+					}
 				}
 			}
-			else if ( IsIdle () )
-			{
-				// check if we should restart motors
-				if ( m_pMachine->MachineUnitsDone () )
-				{
-					On ();
-					m_pMachine->RestartMonitoring ();
-				}
-			}
-			break;
+		}
+		break;
 
 		case ON_POWERED_TIME:
-			if ( IsOiling () )
+		{
+			uint32_t ulPowerTimeNow = TheMachine.GetActiveTime ();
+			for ( uint8_t i = 0; i < m_Motors.uiNumMotors; i++ )
 			{
-				// still oiling so check we haven't exceeded the alert threshold
-				if ( m_pMachine->IsTimeAlert ( m_uiAlertThreshold ) )
+				OilerMotorClass* pMotor = GetOilerMotor ( i );
+				if ( pMotor->IsMoving () )
 				{
-					SetError ();
+					if ( ulPowerTimeNow - pMotor->GetMachinePowerTimeAtStart () >= m_uiAlertThreshold )
+					{
+						// motor has been running longer than alert threshold
+						SetError ();
+					}
+				}
+				else if ( pMotor->IsIdle () )
+				{
+					if ( ulPowerTimeNow - pMotor->GetMachinePowerTimeAtStart () >= m_pMachine->GetActiveTimeTarget () )	// comparing against last start in case oiling is slow and we need to restart asap
+					{
+						// need to restart
+						pMotor->Action ( OilerMotorClass::eOilerMotorEvents::TURN_ON );
+						pMotor->SetMachineUnitsAtStart ( m_pMachine->GetWorkUnits() );
+						pMotor->SetMachinePowerTimeAtStart ( ulPowerTimeNow );
+						m_OilerStatus = OILING;
+					}
 				}
 			}
-			else if ( IsIdle () )
-			{
-				// check if we should restart motors
-				if ( m_pMachine->MachinePoweredTimeExpired () )
-				{
-					On ();
-					m_pMachine->RestartMonitoring ();
-				}
-			}
-			break;
+		}
+		break;
 
 		default:
-			break;		// do nothing, shouldn't get here
+			break;
 	}
 }
 

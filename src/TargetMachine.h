@@ -46,6 +46,8 @@ public:
 	eMachineState	IsReady ( void );
 	uint32_t		GetActiveTime ( void );						// Active time in secs since oiler stopped
 	uint32_t		GetWorkUnits ( void );						// number of work units since oiler stopped
+	uint32_t		GetActiveTimeTarget ( void );				// return the target number of seconds the machine should be active for after which it should be oiled
+	uint32_t		GetWorkUnitTarget ( void );					// return the target number of work units (eg revs) the machine should accomplish after which it should be oiled.
 	void			IncActiveTime ( uint32_t tActive );
 	void			GoneActive ( uint32_t tNow );
 	void			IncWorkUnit ( uint32_t ulIncAmount );
