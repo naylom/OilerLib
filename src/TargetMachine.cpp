@@ -51,15 +51,11 @@ TargetMachineClass::TargetMachineClass ( void )
 /// </summary>
 /// <param name="uiActivePin">digital pin that is signalled whilst target machine is active (e.g. has power),use NOT_A_PIN if feature not implemented</param>
 /// <param name="uiWorkPin">digital pin that is signalled each time the target machine does a unit of work (e.g a rev of a lathe), use NOT_A_PIN if feature not implemented</param>
-/// <param name="uiActiveUnitTarget">threshold, in seconds, beyond which target machine is ready to be oiled</param>
-/// <param name="uiWorkUnitTarget">threshold, in units, beyond which the target machine is ready to be oiled</param>
 /// <returns>false if unable to add valid pin to pin change interrupt handling, else true</returns>
-bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin, uint8_t uiActiveUnitTarget, uint8_t uiWorkUnitTarget )
+bool TargetMachineClass::AddFeatures ( uint8_t uiActivePin, uint8_t uiWorkPin )
 {
 	bool bResult = true;
 
-	m_ulTargetSecs	= uiActiveUnitTarget;
-	m_ulTargetUnits = uiWorkUnitTarget;
 	m_uiActivePin	= uiActivePin;
 	m_uiWorkPin		= uiWorkPin;
 
@@ -125,49 +121,11 @@ void TargetMachineClass::CheckActivity ( void )
 }
 
 /// <summary>
-/// checks if the target machine has equalled or exceeded the threshold set for units of work done
+/// If currently active updates powered time calc
 /// </summary>
 /// <param name="">none</param>
-/// <returns>true if threshold met or exceeded, else false</returns>
-bool TargetMachineClass::MachineUnitsDone ( void )
-{
-	bool bResult = false;
-	if ( m_ulWorkUnitCount >= m_ulTargetUnits )
-	{
-		bResult = true;
-	}
-	return bResult;
-}
-
-/// <summary>
-/// checks if the target machine has met or exceeded the threshold set for time with power
-/// </summary>
-/// <param name="">none</param>
-/// <returns>true if threshold met or exceeded, else false</returns>
-bool TargetMachineClass::MachinePoweredTimeExpired ( void )
-{
-	bool bResult = false;
-	// Check time is up to date
-	if ( m_Active == ACTIVE )
-	{
-		// add time to now and check if passed threshold
-		uint32_t tNow = millis ();
-		IncActiveTime ( tNow );
-		m_timeActiveStarted = tNow;
-	}
-	if ( m_timeActive >= m_ulTargetSecs * 1000 )
-	{
-		bResult = true;
-	}
-	return bResult;
-}
-
-/// <summary>
-/// checks of the target machine is ready to be oiled, ie has met its threshold
-/// </summary>
-/// <param name="">none</param>
-/// <returns>returns TargetMachineClass::eMachineState to reflect if machine is ready or not</returns>
-TargetMachineClass::eMachineState TargetMachineClass::IsReady ( void )
+/// <returns>Nothing</returns>
+void TargetMachineClass::UpdatePoweredTime ( void )
 {
 	// Check time is up to date
 	if ( m_Active == ACTIVE )
@@ -177,42 +135,6 @@ TargetMachineClass::eMachineState TargetMachineClass::IsReady ( void )
 		IncActiveTime ( tNow );
 		m_timeActiveStarted = tNow;
 	}
-	return m_State;
-}
-
-/// <summary>
-/// Checks if TargetMachine has exceeded AlertThreshold in work units
-/// </summary>
-/// <param name="uiAlertThreshold">Value of alert threshold in units of work</param>
-/// <returns>true if exceeded threshold</returns>
-bool TargetMachineClass::IsWorkAlert ( uint16_t uiAlertThreshold )
-{
-	bool bResult = false;
-
-	if ( m_ulWorkUnitCount >= uiAlertThreshold )
-	{
-		bResult = true;
-	}
-
-	return bResult;
-}
-
-/// <summary>
-/// Checks if TargetMachine has exceeded AlertThreshold in seconds
-/// </summary>
-/// <param name="uiAlertThreshold">Value of alert threshold in seconds</param>
-/// <returns>true if exceeded threshold</returns>
-bool TargetMachineClass::IsTimeAlert ( uint16_t uiAlertThreshold )
-{
-	bool bResult = false;
-	// Ensure time is updated before returning value
-	IsReady ();
-	if ( m_timeActive >= uiAlertThreshold * 1000 )
-	{
-		bResult = true;
-	}
-
-	return bResult;
 }
 
 /// <summary>
@@ -223,7 +145,7 @@ bool TargetMachineClass::IsTimeAlert ( uint16_t uiAlertThreshold )
 uint32_t TargetMachineClass::GetActiveTime ( void )
 {
 	// Ensure time is updated before returning value
-	IsReady ();
+	UpdatePoweredTime ();
 	return m_timeActive / 1000;
 }
 
@@ -238,36 +160,13 @@ uint32_t TargetMachineClass::GetWorkUnits ( void )
 }
 
 /// <summary>
-/// Returns the number of seconds the machince should have power before the motors should start oiling
-/// </summary>
-/// <param name="">None</param>
-/// <returns>target number of seconds</returns>
-uint32_t TargetMachineClass::GetActiveTimeTarget ( void )
-{
-	return m_ulTargetSecs;
-}
-
-/// <summary>
-/// return the target number of work units (eg revs) the machine should accomplish after which it should be oiled
-/// </summary>
-/// <param name="">None</param>
-/// <returns>target number of units</returns>
-uint32_t TargetMachineClass::GetWorkUnitTarget ( void )
-{
-	return m_ulTargetUnits;
-}
-
-/// <summary>
-/// add active time in milliseconds to total since machine became active and set state to ready if threshold exceeded
+/// add active time in milliseconds to total since machine became active 
 /// </summary>
 /// <param name="tNow">current time in milliseconds</param>
 void TargetMachineClass::IncActiveTime ( uint32_t tNow )
 {
 	m_timeActive += ( tNow - m_timeActiveStarted );
-	if ( m_timeActive >= m_ulTargetSecs * 1000 )
-	{
-		m_State = READY;
-	}
+
 	m_Active = digitalRead ( m_uiActivePin ) == m_uiActiveState ? ACTIVE : IDLE;
 }
 
@@ -282,48 +181,12 @@ void TargetMachineClass::GoneActive ( uint32_t tNow )
 }
 
 /// <summary>
-/// Increments count of work units completed and then checks if threshold met. If met the state is updated to READY
+/// Increments count of work units completed and then checks if threshold met. 
 /// </summary>
 /// <param name="ulIncAmount">number of units</param>
 void TargetMachineClass::IncWorkUnit ( uint32_t ulIncAmount )
 {
 	m_ulWorkUnitCount += ulIncAmount;
-	if ( m_ulWorkUnitCount >= m_ulTargetUnits )
-	{
-		m_State = READY;
-	}
-}
-
-/// <summary>
-/// Updates the threshold for time with power after which machine becones ready for oiling
-/// </summary>
-/// <param name="ulTargetSecs">Threshold number of seconds</param>
-/// <returns>false if active pin set to NOT_A_PIN, else true</returns>
-bool TargetMachineClass::SetActiveTimeTarget ( uint32_t ulTargetSecs )
-{
-	bool bResult = false;
-	if ( m_uiActivePin != NOT_A_PIN )
-	{
-		m_ulTargetSecs = ulTargetSecs;
-		bResult = true;
-	}
-	return bResult;
-}
-
-/// <summary>
-/// Updates the threshold for units of work (e.g. revs) after which machine becomes ready for oiling
-/// </summary>
-/// <param name="ulTargetUnits">Threshold number of units</param>
-/// <returns>false if active pin set to NOT_A_PIN, else true</returns>
-bool TargetMachineClass::SetWorkTarget ( uint32_t ulTargetUnits )
-{
-	bool bResult = false;
-	if ( m_uiWorkPin != NOT_A_PIN )
-	{
-		m_ulTargetUnits = ulTargetUnits;
-		bResult = true;
-	}
-	return bResult;
 }
 
 /// <summary>

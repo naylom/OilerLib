@@ -13,7 +13,6 @@ SetAlertLevel	KEYWORD2
 SetMotorsForward	KEYWORD2
 SetMotorsBackward	KEYWORD2
 SetStartMode	KEYWORD2
-SetAlert	KEYWORD2
 SetMotorWorkPinMode	KEYWORD2
 SetMotorSensorDebounce	KEYWORD2
 SetStartEventToTargetActiveTime	KEYWORD2
@@ -23,7 +22,7 @@ SetStopTarget	KEYWORD2
 IsIdle	KEYWORD2				
 IsOff	KEYWORD2			
 IsOiling	KEYWORD2	
-IsAlert KEYWORD2
+IsAlert	KEYWORD2
 IsMonitoringTargetPower	KEYWORD2
 IsMonitoringTargetWork	KEYWORD2
 IsMonitoringTime	KEYWORD2 
@@ -32,19 +31,11 @@ GetMotorWorkCount	KEYWORD2
 GetTimeOilerIdle	KEYWORD2
 GetTimeSinceMotorStarted	KEYWORD2
 AddMachine	KEYWORD2
-GetMotorWorkCount	KEYWORD2
-GetTimeOilerIdle	KEYWORD2
-GetTimeSinceMotorStarted	KEYWORD2
 AllMotorsStopped	KEYWORD2
 AddFeatures	KEYWORD2
-MachineUnitsDone	KEYWORD2
-MachinePoweredTimeExpired	KEYWORD2
-SetActiveTimeTarget	KEYWORD2
-SetWorkTarget	KEYWORD2
 SetActivePinMode	KEYWORD2
 SetActiveState	KEYWORD2
 SetWorkPinMode	KEYWORD2
-IsReady	KEYWORD2
 GetActiveTime	KEYWORD2
 GetWorkUnits	KEYWORD2	
 

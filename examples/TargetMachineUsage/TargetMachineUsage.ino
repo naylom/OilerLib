@@ -37,14 +37,14 @@ void setup ()
 	}
 	
 	// configure TheMachine
-	if ( TheMachine.AddFeatures ( HAS_POWER_PIN, DONE_WORK_PIN, POWER_SECONDS_THRESHOLD, WORK_THRESHOLD ) == false )
+	if ( TheMachine.AddFeatures ( HAS_POWER_PIN, DONE_WORK_PIN ) == false )
 	{
 		Serial.println ( F ( "Unable to configure TheMachine, stopped" ) );
 		while ( 1 );
 	}
 	// if you don't have one of these signals from the machine being oiled, then the alternatives below could be used instead
-	//TheMachine.AddFeatures ( NOT_A_PIN, DONE_WORK_PIN, 0, WORK_THRESHOLD );				// no 'has power' output from target machine
-	//TheMachine.AddFeatures ( HAS_POWER_PIN, NOT_A_PIN, POWER_SECONDS_THRESHOLD, 0 );	// no 'work done' output from target machine
+	//TheMachine.AddFeatures ( NOT_A_PIN, DONE_WORK_PIN  );				// no 'has power' output from target machine
+	//TheMachine.AddFeatures ( HAS_POWER_PIN, NOT_A_PIN );	            // no 'work done' output from target machine
 
 	// Add TheMachine to TheOiler
 	TheOiler.AddMachine ( &TheMachine );

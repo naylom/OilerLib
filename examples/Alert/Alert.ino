@@ -50,8 +50,8 @@ void setup ()
 	}
 
 	// Configure Alert if oil is delayed by 3x restart time (ie 60 secs), note this applies independently to all motors so if one is working correctly and second runs out of oil the alert will be generated 
-	// when the second pump fails the 3 x 20 threshold.
-	TheOiler.SetAlert ( ALERT_PIN, 3 );
+	// when the second pump fails the 60 threshold.
+	TheOiler.SetAlert ( ALERT_PIN, 60 );
 
 	// Start Oiler
 	if ( TheOiler.On () == false )

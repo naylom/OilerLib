@@ -43,7 +43,7 @@ void OilerMotorClass::StateTable::SetState ( uint16_t uiNewState )
 /// <param name="pMotor">reference to motor instance</param>
 /// <param name="uiEventId">Id of event to process</param>
 /// <returns>true if state changes, else false</returns>
-bool OilerMotorClass::StateTable::ProcessEvent ( OilerMotorClass* pMotor, uint16_t uiEventId )
+bool OilerMotorClass::StateTable::ProcessEvent ( OilerMotorClass* pMotor, uint16_t uiEventId, uint32_t ulParam )
 {
 	bool bResult = false;
 	for ( unsigned int i = 0; i < m_uiNumTableEntries; i++ )
@@ -53,7 +53,7 @@ bool OilerMotorClass::StateTable::ProcessEvent ( OilerMotorClass* pMotor, uint16
 			if ( m_pTable [ i ].uiEventId == uiEventId )
 			{
 				OilerMotorStateCallback fn = m_pTable [ i ].FnState;
-				uint16_t t = CALL_MEMBER_FN ( *pMotor, fn )();
+				uint16_t t = CALL_MEMBER_FN ( *pMotor, fn )( ulParam );
 				bResult = t == m_uiCurrentState ? false : true;
 				SetState ( t );
 				break;

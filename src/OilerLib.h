@@ -35,7 +35,7 @@
 #include "WProgram.h"
 #endif
 
-#define		OILER_VERSION				"1.5.4"
+#define		OILER_VERSION				"1.5.5"
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled
@@ -62,7 +62,7 @@ public:
 	void				AddMachine ( TargetMachineClass* pMachine );				// optionally called to inform oiler we have a target machine that can be queried
 	bool				AddMotor ( uint8_t uiPin1, uint8_t uiPin2, uint8_t uiPin3, uint8_t uiPin4, uint32_t ulSpeed, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// FourPin Stepper version
 	bool				AddMotor ( uint8_t uiRelayPin, uint8_t uiWorkPin, uint8_t uiWorkTarget = NUM_MOTOR_WORK_EVENTS );		// 1 pin relay version
-	void				SetAlert ( uint8_t uiAlertPin, uint32_t uiAlertThreshold );	// Set the pin to be signalled when oiling is delayed.
+	void				SetAlert ( uint8_t uiAlertPin, uint32_t ulAlertThreshold );	// Set the pin to be signalled when oiling is delayed.
 	bool				SetAlertLevel ( uint8_t uiLevel );							// Set level of alert pin when in Alert State
 	void				SetMotorsBackward ( void );									// Set direction of all motors
 	void				SetMotorsBackward ( uint8_t uiMotorIndex );					// set direction of specified motor
@@ -92,39 +92,39 @@ public:
 
 /*---------------------- INTERNAL USE - DO NOT USE -----------------------------------*/
 
-	void				CheckTargetReady ( void );									// Checks if target is ready for oil
-	void				CheckElapsedTime ( void );									// Checks time running since oiler last finished - this is the basic version not using TargetMachine
 	OilerMotorClass*	GetOilerMotor ( uint8_t uiMotorIndex );						// Gets the instance of the specified motor
 	void				CheckMotors ();												// Used internally by interrupt handler to check if all motors are now off or idle
 	void				MotorWork ( uint8_t uiMotorIndex );							// Used internally to process a unit of work
+	void				ProcessTimerEvent ( void );									// Used internally to handle a time interrupt event
 
 protected:
 	enum eStartMode { ON_TIME = 0, ON_POWERED_TIME, ON_TARGET_ACTIVITY, NONE };
 	enum eStatus { OILING = 0, OFF, IDLE };											// IDLE => waiting for start event
 
-	void				CheckError ( uint16_t uiActual );
 	void				ClearError ( void );
 	void				SetupMotorPins ( uint8_t uiWorkPin, uint8_t uiWorkTarget );
 	OilerMotorClass::eOilerMotorState	GetMotorState ( uint8_t uiMotorNum );		// get state of specified motor
 	eStartMode			GetStartMode ( void );
+	uint32_t			GetStartModeUnits ( void );
 	eStatus				GetStatus ( void );
 	uint32_t			GetMachinePoweredOnTime ( void );
 	uint32_t			GetMachineUnitCount ( void );								// return machine work units so far
 	void				SetError ();
 	bool				SetStartMode ( eStartMode Mode, uint16_t uiModeTarget );
+	void				SetAlertThreshold ( uint32_t uiAlertThreshold );
 
 	eStartMode			m_OilerMode;
 	eStatus				m_OilerStatus;
 	TargetMachineClass* m_pMachine;
 	uint32_t			m_timeOilerStopped;
 	uint8_t				m_uiAlertPin;												// pin to signal if Alert to be generated
-	uint16_t			m_uiAlertThreshold;											// Value of metric used to restart Oiler if motors are running in excess of AlertThreshold
+	uint32_t			m_ulAlertThreshold;											// Value of metric used to check if oilermotor should be in Error mode
 	uint8_t				m_uiALertOnValue;											// value to set pin when alert is on
 	bool				m_bAlert;													// true when in alert state
 
 	union																			// These values are mutually exclsuive so use same storage
 	{
-		uint16_t m_uiOilTime;
+		uint16_t m_uiRestartTarget;
 		uint16_t m_uiWorkTarget;
 	};
 

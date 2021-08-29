@@ -17,13 +17,12 @@
 #define _OILER_MOTOR_h
 
 #include "Motor.h"
-
 class OilerMotorClass : public MotorClass
 {
 protected:
 	class StateTable
 	{
-		typedef uint16_t ( OilerMotorClass::*OilerMotorStateCallback )( );
+		typedef uint16_t ( OilerMotorClass::*OilerMotorStateCallback )( uint32_t ulParam );
 	public:
 		typedef struct
 		{
@@ -34,41 +33,42 @@ protected:
 
 		StateTable ( PSTATE_TABLE_ENTRY pTable, uint16_t uiNumEntries );
 		uint16_t	GetCurrentState ( void );
-		bool		ProcessEvent ( OilerMotorClass* pMotor, uint16_t uiEventId );
+		bool		ProcessEvent ( OilerMotorClass* pMotor, uint16_t uiEventId, uint32_t ulParam );
 
 
 	protected:
-		PSTATE_TABLE_ENTRY	m_pTable;				// ptr to array of table entries
-		uint16_t			m_uiNumTableEntries;	// number of table entries
-		uint16_t			m_uiCurrentState;		// Current State
+		PSTATE_TABLE_ENTRY	m_pTable;							// ptr to array of table entries
+		uint16_t			m_uiNumTableEntries;				// number of table entries
+		uint16_t			m_uiCurrentState;					// Current State
 
 		void		SetState ( uint16_t uiNewState );
 	};
 
 public:
 	// State table functions
-	virtual uint16_t		TurnOn ();							// function called to turn motor on and return new state
-	virtual uint16_t		TurnOff ();							// function called to turn motor off and return new state
-	virtual uint16_t		CheckWork ();						// function called to check if sufficient oil has been produced and to idle motor if it has
-	virtual uint16_t		CheckTime ();						// function called to check if time passed implies oiler not working
-	virtual uint16_t		DoNothing ();
+	virtual uint16_t		TurnOn ( uint32_t ulParam );		// function called to turn motor on and return new state
+	virtual uint16_t		TurnOff ( uint32_t ulParam );		// function called to turn motor off and return new state
+	virtual uint16_t		CheckWork ( uint32_t ulParam );		// function called to check if sufficient oil has been produced and to idle motor if it has
+	virtual uint16_t		CheckAlert ( uint32_t ulParam );	// function called to check if threshold exceeded for oil to be produced
+	virtual uint16_t		CheckRestart ( uint32_t ulParam );	// function called to check if restart required
+	virtual uint16_t		DoNothing ( uint32_t ulParam );
 
 	// abstract function that derived classes must implement
-	virtual void			Idle () = 0;									// Idle motor, still energised but not moving
-	virtual void			Start () = 0;									// Start motor
-	virtual void			PowerOff () = 0;								// power off motor
+	virtual void			Idle () = 0;						// Idle motor, still energised but not moving
+	virtual void			Start () = 0;						// Start motor
+	virtual void			PowerOff () = 0;					// power off motor
 
 protected:
-	uint8_t		m_uiWorkPin;			// input Pin that indicates when a unit of work has been seen
-	uint32_t	m_ulWorkThreshold;		// number of units to be seen before idling motor
-	uint32_t	m_ulDebounceMin;		// number of milliseconds that must elapse before a subsequent workpin signal is treated as real
-	uint16_t	m_uiWorkCount;			// number of work units seen since last reset
-	uint32_t	m_ulLastWorkSignal;		// time of last signal in millis
-	uint16_t	m_uiTimeThresholdSec;	// time after which idle motor should restart
-	uint32_t	m_ulMachineUnitsAtStart;// number of machine units (eg revs) when motor last started
-	uint32_t	m_ulMachineUnitsAtIdle;	// number of machine units (eg revs) when motor last idled
-	uint32_t	m_ulMachinePowerTimeAtStart;// number of seconds of machine having power when motor last started
-	uint32_t	m_ulMachinePowerTimeAtIdle;	// number of seconds of machine having power when motor last idled
+	uint8_t		m_uiWorkPin;									// input Pin that indicates when a unit of work has been seen
+	uint32_t	m_ulWorkThreshold;								// number of units to be seen before idling motor
+	uint32_t	m_ulDebounceMin;								// number of milliseconds that must elapse before a subsequent workpin signal is treated as real
+	uint16_t	m_uiWorkCount;									// number of work units seen since last reset
+	uint32_t	m_ulLastWorkSignal;								// time of last signal in millis
+	uint16_t	m_uiRestartValue;								// Value after which motor should be restarted
+	uint32_t	m_ulAlertThreshold;								// if beyond this threshold then the motor is taking too long to oil
+	bool		m_bError;										// true if motor not completed work within alert threshold
+	uint32_t	m_ulModeMetricAtStart;							// value of mode metric being used when motor last started
+	uint32_t	m_ulModeMetricAtIdle;							// value of mode metric being used when motor last idled
 	StateTable	m_MotorState;
 
 /*
@@ -76,14 +76,14 @@ protected:
 */
 
 public:
-	enum eOilerMotorState : uint16_t						// States motor can be in
+	enum eOilerMotorState : uint16_t							// States motor can be in
 	{
 		OFF = 0,			// OFF => not energised, default state at start must be 0
 		IDLE,				// IDLE imples not moving but is being held stationary
 		MOVING
 	};
 
-	enum eOilerMotorEvents : uint16_t						// events that can change motor state
+	enum eOilerMotorEvents : uint16_t							// events that can change motor state
 	{
 		TURN_ON = 0,		// Request to turn on
 		TURN_OFF,			// Request to turn off
@@ -100,35 +100,34 @@ private:
 		{ MOVING,	TURN_ON,	&OilerMotorClass::DoNothing },			// if moving no need to start moving, ignore
 		{ MOVING,	TURN_OFF,	&OilerMotorClass::TurnOff },			// if moving, turn off
 		{ MOVING,	WORK_SEEN,	&OilerMotorClass::CheckWork },			// if moving and oil drip see check if enough produced and idle motor
-		{ MOVING,	TIMER,		&OilerMotorClass::DoNothing },			// if moving, nothing to do
+		{ MOVING,	TIMER,		&OilerMotorClass::CheckAlert },			// if moving, check if taking too long
 		{ IDLE,		TURN_ON,	&OilerMotorClass::TurnOn },				// start motor moving
 		{ IDLE,		TURN_OFF,	&OilerMotorClass::TurnOff },			// turn off
 		{ IDLE,		WORK_SEEN,	&OilerMotorClass::DoNothing },			// oil produced whilst idle - ignore
-		{ IDLE,		TIMER,		&OilerMotorClass::CheckTime }			// see if we need to restart based on time idle
+		{ IDLE,		TIMER,		&OilerMotorClass::CheckRestart }			// see if we need to restart based on time idle
 	};
 
 public:
-	OilerMotorClass ( uint8_t uiWorkPin, uint32_t ulThreshold, uint32_t ulDebouncems, uint32_t ulSpeed, uint16_t ulTimeThreshold );
+	OilerMotorClass ( uint8_t uiWorkPin, uint32_t ulThreshold, uint32_t ulDebouncems, uint32_t ulSpeed, uint16_t uiRestartThreshold );
 	virtual		bool On ( void );
 	virtual		bool Off ( void );
-	uint32_t	GetMachineUnitsAtStart ( void );
-	uint32_t	GetMachineUnitsAtIdle ( void );
-	uint32_t	GetMachinePowerTimeAtStart ( void );
-	uint32_t	GetMachinePowerTimeAtIdle ( void );
+	uint32_t	GetModeMetricAtStart ( void );
+	uint32_t	GetModeMetricAtIdle ( void );
 	void		IncWorkUnits ( uint16_t uiNewUnits = 1 );
 	void		ResetWorkUnits ( void );
 	void		SetDebouncems ( uint32_t ulDebouncems );
 	void		SetWorkThreshold ( uint32_t ulWorkThreshold );
-	void		SetTimeThreshold ( uint16_t uiTimeThresholdSec );
-	void		SetMachineUnitsAtStart ( uint32_t ulMachineUnitsAtStart );
-	void		SetMachineUnitsAtIdle ( uint32_t ulMachineUnitsAtIdle );
-	void		SetMachinePowerTimeAtStart ( uint32_t ulMachinePowerTimeAtStart );
-	void		SetMachinePowerTimeAtIdle ( uint32_t ulMachinePowerTimeAtIdle );
-	bool		Action ( eOilerMotorEvents eAction );
+	void		SetRestartThreshold ( uint16_t uiRestartValue );
+	void		SetAlertThreshold ( uint32_t ulAlertThreshold );
+	void		SetModeMetricAtStart ( uint32_t ulMetric );
+	void		SetModeMetricAtIdle ( uint32_t ulMetric );
+	bool		Action ( eOilerMotorEvents eAction, uint32_t ulParam = 0UL );
 	uint16_t	GetWorkUnits ();
 	eOilerMotorState GetOilerMotorState ();
 	bool		IsIdle ();
 	bool		IsMoving ();
 	bool		IsOff ();
+	bool		IsInError ();
 };
+
 #endif

@@ -7,17 +7,18 @@
 //
 #include "OilerMotor.h"
 
-OilerMotorClass::OilerMotorClass ( uint8_t uiWorkPin, uint32_t ulThreshold, uint32_t ulDebouncems, uint32_t ulSpeed, uint16_t uiTimeThreshold ) : MotorClass ( ulSpeed ), m_MotorState ( &MotorTable [ 0 ], ( sizeof ( MotorTable ) / sizeof ( MotorTable [ 0 ] ) ) )
+OilerMotorClass::OilerMotorClass ( uint8_t uiWorkPin, uint32_t ulThreshold, uint32_t ulDebouncems, uint32_t ulSpeed, uint16_t uiRestartThreshold ) : MotorClass ( ulSpeed ), m_MotorState ( &MotorTable [ 0 ], ( sizeof ( MotorTable ) / sizeof ( MotorTable [ 0 ] ) ) )
 {
-	m_uiWorkPin = uiWorkPin;
-	m_ulLastWorkSignal = 0UL;
-	m_ulMachineUnitsAtStart = 0UL;
-	m_ulMachineUnitsAtIdle = 0UL;
-	m_ulMachinePowerTimeAtStart = 0UL;
-	m_ulMachinePowerTimeAtIdle = 0UL;
+	m_uiWorkPin					= uiWorkPin;
+	m_ulLastWorkSignal			= 0UL;
+	m_bError					= false;
+	SetModeMetricAtStart ( 0UL );
+	SetModeMetricAtIdle ( 0UL );
 	SetWorkThreshold ( ulThreshold );
 	SetDebouncems ( ulDebouncems );
-	SetTimeThreshold ( uiTimeThreshold );
+	SetRestartThreshold ( uiRestartThreshold );
+	SetAlertThreshold ( 0UL );
+	ResetWorkUnits ();
 }
 
 bool OilerMotorClass::On ( void )
@@ -56,54 +57,39 @@ void OilerMotorClass::SetWorkThreshold ( uint32_t ulWorkThreshold )
 	m_ulWorkThreshold = ulWorkThreshold;
 }
 
-void OilerMotorClass::SetTimeThreshold ( uint16_t uiTimeThresholdSec )
+void OilerMotorClass::SetRestartThreshold ( uint16_t uiRestartValue )
 {
-	m_uiTimeThresholdSec = uiTimeThresholdSec;
+	m_uiRestartValue = uiRestartValue;
 }
 
-void OilerMotorClass::SetMachineUnitsAtStart ( uint32_t ulMachineUnitsAtStart )
+void OilerMotorClass::SetAlertThreshold ( uint32_t ulAlertThreshold )
 {
-	m_ulMachineUnitsAtStart = ulMachineUnitsAtStart;
+	m_ulAlertThreshold = ulAlertThreshold;
 }
 
-void OilerMotorClass::SetMachineUnitsAtIdle ( uint32_t ulMachineUnitsAtIdle )
+void OilerMotorClass::SetModeMetricAtStart ( uint32_t ulMetric )
 {
-	m_ulMachineUnitsAtIdle = ulMachineUnitsAtIdle;
+	m_ulModeMetricAtStart = ulMetric;
 }
 
-void OilerMotorClass::SetMachinePowerTimeAtStart ( uint32_t ulMachinePowerTimeAtStart )
+void OilerMotorClass::SetModeMetricAtIdle ( uint32_t ulMetric )
 {
-	m_ulMachinePowerTimeAtStart = ulMachinePowerTimeAtStart;
+	m_ulModeMetricAtIdle = ulMetric;
 }
 
-void OilerMotorClass::SetMachinePowerTimeAtIdle ( uint32_t ulMachinePowerTimeAtIdle )
+inline uint32_t OilerMotorClass::GetModeMetricAtStart ( void )
 {
-	m_ulMachinePowerTimeAtIdle = ulMachinePowerTimeAtIdle;
+	return m_ulModeMetricAtStart;
 }
 
-uint32_t OilerMotorClass::GetMachineUnitsAtStart ( void )
+inline uint32_t OilerMotorClass::GetModeMetricAtIdle ( void )
 {
-	return m_ulMachineUnitsAtStart;
+	return m_ulModeMetricAtIdle;
 }
 
-uint32_t OilerMotorClass::GetMachineUnitsAtIdle ( void )
+bool OilerMotorClass::Action ( eOilerMotorEvents eAction, uint32_t ulParam )
 {
-	return m_ulMachineUnitsAtIdle;
-}
-
-uint32_t OilerMotorClass::GetMachinePowerTimeAtStart ( void )
-{
-	return m_ulMachinePowerTimeAtStart;
-}
-
-uint32_t OilerMotorClass::GetMachinePowerTimeAtIdle ( void )
-{
-	return m_ulMachinePowerTimeAtIdle;
-}
-
-bool OilerMotorClass::Action ( eOilerMotorEvents eAction )
-{
-	return m_MotorState.ProcessEvent ( this, eAction );
+	return m_MotorState.ProcessEvent ( this, eAction, ulParam );
 }
 
 
@@ -142,34 +128,43 @@ bool OilerMotorClass::IsOff ()
 {
 	return GetOilerMotorState () == OFF ? true : false;
 }
+/// <summary>
+/// returns true if the motor has not completed its work output before set threshold
+/// </summary>
+/// <returns>true if work delayed else false</returns>
+bool OilerMotorClass::IsInError ()
+{
+	return m_bError;
+}
 
 /// <summary>
-/// State table functon called to start motor moving
+/// State table function called to start motor moving
 /// </summary>
 /// <returns>new state</returns>
-uint16_t OilerMotorClass::TurnOn ()
+uint16_t OilerMotorClass::TurnOn ( uint32_t ulParam )
 {
-	On ();				// Update status
-	Start ();			// physically start motor
-	return MOVING;		// new state
+	On ();								// Update status
+	Start ();							// physically start motor
+	SetModeMetricAtStart ( ulParam );
+	return MOVING;						// new state
 }
 
 /// <summary>
 /// State table function called to turn off motor
 /// </summary>
 /// <returns>new state</returns>
-uint16_t OilerMotorClass::TurnOff ()
+uint16_t OilerMotorClass::TurnOff ( uint32_t ulParam )
 {
-	Off ();				// Update status
-	PowerOff ();		// physically turn off
-	return OFF;			// new state
+	Off ();								// Update status
+	PowerOff ();						// physically turn off
+	return OFF;							// new state
 }
 
 /// <summary>
 /// Checks if we have equalled or exceeded the threshold set for units of work (oil drips) and idles motor if true
 /// </summary>
 /// <returns>new state or existing state</returns>
-uint16_t OilerMotorClass::CheckWork ()
+uint16_t OilerMotorClass::CheckWork ( uint32_t ulParam )
 {
 	uint16_t uiResult;
 
@@ -177,42 +172,54 @@ uint16_t OilerMotorClass::CheckWork ()
 	if ( millis () - m_ulLastWorkSignal >= m_ulDebounceMin )
 	{
 		IncWorkUnits ( 1 );
-		if ( m_uiWorkCount >= m_ulWorkThreshold )
+		if ( GetWorkUnits() >= m_ulWorkThreshold )
 		{
 			uiResult = IDLE;			// new state
 			Idle ();					// Physically idle motor
 			OilerMotorClass::Off ();	// update class, don't invoke
+			SetModeMetricAtIdle ( ulParam );
+			m_bError = false;
 		}
 		else
 		{
 			// not met threshold
-			uiResult = DoNothing ();
+			uiResult = DoNothing (0);
 		}
 	}
 	else
 	{
 		// ignore bad signal
-		uiResult = DoNothing ();
+		uiResult = DoNothing (0);
 	}
 	return uiResult;
+}
+/// <summary>
+/// Called to set error state if still oiling beyond alert threshold
+/// </summary>
+/// <param name="ulParam">Current value of metric to be measured against alert threshold</param>
+/// <returns>false, does not change OilerMotor processing state</returns>
+uint16_t OilerMotorClass::CheckAlert ( uint32_t ulParam )
+{
+	m_bError = ( ulParam - GetModeMetricAtStart() ) >= m_ulAlertThreshold ? true : false;
+	return DoNothing ( 0UL );
 }
 
 /// <summary>
 /// Checks to see if the motor should restart after a set time has elapsed
 /// </summary>
 /// <returns></returns>
-uint16_t OilerMotorClass::CheckTime ()
+uint16_t OilerMotorClass::CheckRestart ( uint32_t ulParam )
 {
 	uint16_t uiResult;
-	//if ( ( millis() - MotorClass::GetTimeMotorStopped () ) / 1000 >= m_uiTimeThresholdSec )
-	if ( ( millis () - MotorClass::GetTimeMotorStarted () ) / 1000 >= m_uiTimeThresholdSec )		// use time started so a slow motor restarts from start time not when it finished dripping oil
+
+	if ( ( ulParam - GetModeMetricAtStart () ) >= m_uiRestartValue )
 	{
 		// time to start motor
-		uiResult = TurnOn ();
+		uiResult = TurnOn ( ulParam );
 	}
 	else
 	{
-		uiResult = DoNothing ();
+		uiResult = DoNothing (0);
 	}
 	return uiResult;
 }
@@ -221,7 +228,7 @@ uint16_t OilerMotorClass::CheckTime ()
 /// Keeps state of state machine unchanged
 /// </summary>
 /// <returns>existing state</returns>
-uint16_t OilerMotorClass::DoNothing ()
+uint16_t OilerMotorClass::DoNothing ( uint32_t ulParam )
 {
 	return m_MotorState.GetCurrentState ();
 }
