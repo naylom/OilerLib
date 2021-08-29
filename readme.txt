@@ -7,7 +7,11 @@ The library optionally also supports two additional input signals designed to be
 
 The library has support for two types of motors one driven by a simple relay switch and the other a stepper motor. Multiple motors of each type can be configured in any combination. The limits are the number of pins available on the Uno and a software limit of 6 motors. Since each motor needs a feedback signal as described above each relay based motor will use 2 Uno pins and each stepper motor 5 pins (the code is written for a 4 pin stepper driver).
 
-whilst the original purpose of this libabry is oiling the code has no real knowledge of the actual purpose. It switches motors on based on a trigger event and off after it gets enough signals that the delivery is complete. As a result this can be used for other purposes.
+Whilst the original purpose of this library is oiling the code has no real knowledge of the actual purpose. It switches motors on based on a trigger event and off after it gets enough signals that the delivery is complete. As a result this can be used for other purposes.
+
+Motors track when to start and stop independently so a slow motor will not impact other motors.
+
+When a motor is deciding when to restart it compares the state of the oiler at the time it last started - not the time it last stopped. This is done to reduce the impact of  slow motor, e.g. if oiling every 30 seconds but a slow oiler takes 12 seconds to oil, it will restart the slow motor 30 seconds after it started. If it started counting 30 seconds from when the oiling finished it would result in the next 30 + 12 seconds between oiling not 30 seconds. One side effect of this is that is a slow motor takes longer than the 30 seconds set in this example then it will stop on completing oiling and immediately restart trying to oil as it has already exceeded the target oil interval. 
 
 Depending upon the programming skill of the library user there are different options to get going:
 
