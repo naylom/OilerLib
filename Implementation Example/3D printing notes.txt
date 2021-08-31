@@ -1,0 +1,15 @@
+Auto-oiler STL file notes:
+
+1)  Main Housing and Main Housing Lid are offered with "Mickey Mouse" ears on each corner of the base to help prevent warping.  These should be cut off after printing.
+
+2)  Main Housing should be printed with no support.  There are two square holes for the pump clips which will fill and will prove impossible to clean out.
+
+3)  The acrylic oil tank can be satisfactory glued into the oil tank manifold and the manifold to the main housing using ABS solvent welding adhesive sold for joining domestic soil pipes.
+
+4)  The metal hose tails at the bottom of the oil manifold are threaded M5 and should be inserted by heating to a suitable temperature and screwing into position whilst hot.  This should provide a suitable oil tight connection.
+
+5) M3.5 screws have been used to secure the lid to the main housing.  These have been used as they are readily available in the UK in lengths up to 75mm as domestic electrical face plate screws.  Apologies to anyone outside of the UK who may find sourcing these difficult.  These could be drilled tapped M4 if the prints are made with sufficient wall thickness.
+
+6)  The Arduino bracket is arranged such that the USB socket will protrude into a cut-out made in its enclosure, allowing access from outside.
+
+7)  Printing parameters ... Material ABS, Layer height 0.2mm, Fill 26%, 
