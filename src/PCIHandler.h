@@ -12,11 +12,8 @@
 #ifndef _PCIHANDLER_h
 #define _PCIHANDLER_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
-#else
-#include "WProgram.h"
-#endif
+
 #define		NUM_PCI_PORTS		3										// number of ports on Atmel chip on arduino Uno board that can generate a PCI
 #define		MAX_PCI_PINS		8										// max number of PCI pins allowed to be monitored
 typedef void ( *InterruptCallback )( void );

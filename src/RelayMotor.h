@@ -8,11 +8,8 @@
 #ifndef _RELAYMOTOR_h
 #define _RELAYMOTOR_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
-#else
-#include "WProgram.h"
-#endif
+
 #include "OilerMotor.h"
 
 class RelayMotorClass : public OilerMotorClass

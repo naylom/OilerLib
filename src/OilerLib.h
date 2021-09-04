@@ -29,13 +29,9 @@
 #ifndef _OILERLIB_h
 #define _OILERLIB_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
-#else
-#include "WProgram.h"
-#endif
 
-#define		OILER_VERSION				"1.5.5"
+#define		OILER_VERSION				"1.5.7"
 
 #define		MAX_MOTORS					6											// MAX the oiler can support
 #define		MOTOR_WORK_SIGNAL_MODE		FALLING										// Change in signal when motor output (eg oil seen) is signalled

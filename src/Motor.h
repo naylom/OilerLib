@@ -8,12 +8,8 @@
 #ifndef _MOTOR_h
 #define _MOTOR_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
-#else
-#include "WProgram.h"
-#endif
-//#include "State.h"
+
 #define CALL_MEMBER_FN(object,ptrToMember)  ((object).*(ptrToMember))
 
 class MotorClass

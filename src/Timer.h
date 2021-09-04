@@ -8,11 +8,8 @@
 #ifndef _TIMER_h
 #define _TIMER_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
-#else
-#include "WProgram.h"
-#endif
+
 #define MAX_CALLBACKS	8
 #define RESOLUTION		2000		// ticks per sec
 
