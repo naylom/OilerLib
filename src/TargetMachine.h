@@ -16,12 +16,7 @@
 #ifndef _TARGETMACHINE_h
 #define _TARGETMACHINE_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>
-#else
-#include "WProgram.h"
-#endif
-
 
 #define		MACHINE_ACTIVE_PIN_MODE		INPUT_PULLUP		// Default value
 #define		MACHINE_ACTIVE_PIN_SIGNAL	CHANGE				// Callback invoked if signal CHANGES

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
@@ -15,13 +15,28 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="$(MSBuildThisFileDirectory)readme.txt" />
-	<Text Include="$(MSBuildThisFileDirectory)library.properties" />
-  	<Text Include="$(MSBuildThisFileDirectory)src\OilerLib.h" />
-  </ItemGroup>
- <ItemGroup>
-    <!-- <ClInclude Include="$(MSBuildThisFileDirectory)OilerLib.h" /> -->
+    <Text Include="$(MSBuildThisFileDirectory)library.properties" />
+    <Text Include="$(MSBuildThisFileDirectory)src\OilerLib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)src\OilerLib.cpp" />
+    <!-- <ClInclude Include="$(MSBuildThisFileDirectory)OilerLib.h" /> -->
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\FourPinStepperMotor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\Motor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\OilerMotor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\PCIHandler.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\RelayMotor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\TargetMachine.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)src\Timer.h" />
   </ItemGroup>
-  </Project>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\FourPinStepperMotor.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\Motor.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\OilerLib.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\OilerMotor.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\PCIHandler.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\RelayMotor.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\State.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\TargetMachine.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)src\Timer.cpp" />
+  </ItemGroup>
+</Project>
